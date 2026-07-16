@@ -424,8 +424,8 @@ def main():
     current_dir = os.path.dirname(os.path.abspath(__file__))
     project_dir = os.path.dirname(current_dir)
     data_path = os.path.join(project_dir, "data", "bestsellers.csv")
-    md_path = os.path.join(project_dir, "reports", "eda_report.md")
-    docx_path = os.path.join(project_dir, "reports", "eda_report.docx")
+    md_path = os.path.join(project_dir, "docs", "eda_report.md")
+    docx_path = os.path.join(project_dir, "docs", "eda_report.docx")
     image_base_dir = os.path.join(project_dir, "images")
     
     # 1. 마크다운 보고서 자동 생성
