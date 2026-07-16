@@ -21,9 +21,9 @@
 - [x] **3단계: 탐색적 데이터 분석(EDA) 시각화 스크립트 구현**
   - 파일: [eda.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/KyoBooks/src/eda.py)
   - 내용: 한글 깨짐 방지 폰트 처리, 출판사 점유율, 가격/할인율 분포, 장르 워드클라우드 및 상관관계 맵 등 이미지 5종 생성 완료
-- [/] **4단계: openpyxl 기반 분석 및 KPI 엑셀 대시보드 구축 (엑셀 잠금 대기 중)**
+- [x] **4단계: openpyxl 기반 분석 및 KPI 엑셀 대시보드 구축**
   - 파일: [build_excel_dashboard.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/KyoBooks/src/build_excel_dashboard.py)
-  - 내용: 엑셀 파일 열림(Lock)으로 인한 PermissionError 해소 후 최종 빌드 갱신 예정
+  - 내용: 엑셀 파일 잠금 해제 조치 완료 후 [bestsellers_dashboard.xlsx](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/KyoBooks/docs/bestsellers_dashboard.xlsx) 최종 정상 생성 및 갱신 완료
 - [x] **5단계: 데이터 분석 보고서 마크다운 자동 빌드 및 MS Word 문서 변환**
   - 파일: [convert_to_docx.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/KyoBooks/src/convert_to_docx.py)
   - 내용: 요약 지표가 반영된 마크다운 보고서([eda_report.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/KyoBooks/docs/eda_report.md)) 작성 및 스타일 테마가 지정된 [eda_report.docx](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/KyoBooks/docs/eda_report.docx) 파일로 변환 성공
