@@ -1,0 +1,13 @@
+{
+    "url": "https://store.kyobobook.co.kr/api/gw/best/best-seller/realtime?page=1&per=50",
+    "headers": {
+        "sec-ch-ua-platform": "\"Windows\"",
+        "referer": "https://store.kyobobook.co.kr/bestseller/realtime?page=1&per=50",
+        "sec-ch-ua": "\"HeadlessChrome\";v=\"149\", \"Chromium\";v=\"149\", \"Not)A;Brand\";v=\"24\"",
+        "sec-ch-ua-mobile": "?0",
+        "x-api-gw-key": "eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..46i-NsIUjJggOjej.GukKPz3OyKam4iWzXeBoLGQDKlA7thzNqM2WBclON-AUoUi_7K2DUeOp4l8HrgdbhQqRIkPAZ8J0S626Dp4Matl5OZoESE8x_nnBGDTXHRf9AC5zzfI2WvYgFLjMIpw82k6x9rYt.wzusaQ0rM7PIHvpOZAciYA",
+        "user-agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) HeadlessChrome/149.0.7827.55 Safari/537.36",
+        "content-type": "application/json",
+        "sec-ch-ua-platform-version": "\"19.0.0\""
+    }
+}
