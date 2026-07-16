@@ -1,9 +1,10 @@
 """
-교보문고 베스트셀러 탐색적 데이터 분석 (EDA) 및 시각화
+교보문고 베스트셀러 탐색적 데이터 분석 (EDA) 및 시각화 (py-eda 스킬 규칙 준수 버전)
 
 이 모듈은 수집된 교보문고 베스트셀러 데이터인 bestsellers.csv 파일을 로드하여
 데이터 전처리를 수행하고, 데이터 기반의 다양한 인사이트를 시각화 이미지로 생성합니다.
-시각화 결과 그래프들은 KyoBooks/images 디렉토리에 저장됩니다.
+koreanize-matplotlib를 사용하여 한글 폰트를 연동하고,
+Seaborn 전역 테마 설정을 사용하지 않고 차트별 세부 설정을 수행합니다.
 
 분석 및 시각화 항목:
 1. 베스트셀러 점유율 상위 10개 출판사 분석 (막대 그래프)
@@ -17,15 +18,10 @@ import os
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+import koreanize_matplotlib  # py-eda 한글 폰트 연동 규칙 준수
 from wordcloud import WordCloud
 from collections import Counter
-
-def set_korean_font():
-    """Matplotlib 한글 깨짐 방지를 위해 시스템 한글 폰트(맑은 고딕)를 설정합니다."""
-    plt.rcParams['font.family'] = 'Malgun Gothic'
-    plt.rcParams['axes.unicode_minus'] = False
-    # 그래프 스타일 설정
-    sns.set_theme(style="whitegrid", font="Malgun Gothic")
+import io
 
 def run_eda():
     # 경로 설정
@@ -41,30 +37,46 @@ def run_eda():
         
     print("1. 데이터를 불러오는 중...")
     df = pd.read_csv(data_path, encoding="utf-8-sig")
-    print(f"데이터 로드 완료: 총 {len(df)}개 도서 정보")
+    
+    # -------------------------------------------------------------
+    # py-eda 규칙 2: 데이터 탐색 기초 출력 및 무결성 진단
+    # -------------------------------------------------------------
+    print("\n" + "="*50)
+    print(" py-eda 데이터 탐색 기초 진단 보고")
+    print("="*50)
+    print(f"- 데이터 크기 (행/열): {df.shape[0]}행 {df.shape[1]}열")
+    print(f"- 중복된 데이터 행 수: {df.duplicated().sum()}건")
+    
+    print("\n[기본 정보 (info())]")
+    buffer = io.StringIO()
+    df.info(buf=buffer)
+    print(buffer.getvalue())
+    
+    print("\n[원시 데이터 프리뷰 (상위 3행)]")
+    print(df.head(3).to_string())
+    print("\n[원시 데이터 프리뷰 (하위 3행)]")
+    print(df.tail(3).to_string())
     
     # 2. 데이터 전처리 및 수치형 변환
-    print("2. 데이터 전처리 수행 중...")
     df['정가'] = pd.to_numeric(df['정가'], errors='coerce').fillna(0)
     df['할인가'] = pd.to_numeric(df['할인가'], errors='coerce').fillna(0)
     df['할인율'] = pd.to_numeric(df['할인율'], errors='coerce').fillna(0)
     df['리뷰건수'] = pd.to_numeric(df['리뷰건수'], errors='coerce').fillna(0)
     df['평점'] = pd.to_numeric(df['평점'], errors='coerce').fillna(0.0)
     
-    # 한글 폰트 설정 적용
-    set_korean_font()
-    
     # -------------------------------------------------------------
     # 시각화 1: Top 10 출판사 분석
     # -------------------------------------------------------------
-    print("3-1. Top 10 출판사 시각화 작성 중...")
+    print("\n3-1. Top 10 출판사 시각화 작성 중...")
     plt.figure(figsize=(12, 6))
     top_publishers = df['출판사'].value_counts().head(10)
     
-    sns.barplot(x=top_publishers.values, y=top_publishers.index, palette="viridis")
+    # sns.set_theme() 전역 테마 설정을 호출하지 않고, 개별 차트 디테일 조정
+    sns.barplot(x=top_publishers.values, y=top_publishers.index, hue=top_publishers.index, palette="viridis", legend=False)
     plt.title("교보문고 베스트셀러 점유율 상위 10개 출판사", fontsize=16, fontweight='bold', pad=15)
     plt.xlabel("베스트셀러 등록 도서 수 (권)", fontsize=12)
     plt.ylabel("출판사명", fontsize=12)
+    plt.grid(True, axis='x', linestyle='--', alpha=0.5)  # 개별 그리드 조정
     plt.tight_layout()
     
     pub_chart_path = os.path.join(images_dir, "top_publishers.png")
@@ -105,6 +117,7 @@ def run_eda():
     plt.xlabel("가격 (원)", fontsize=12)
     plt.ylabel("도서 빈도 수 (권)", fontsize=12)
     plt.legend()
+    plt.grid(True, linestyle=':', alpha=0.6)
     plt.tight_layout()
     
     price_chart_path = os.path.join(images_dir, "price_distribution.png")
@@ -120,10 +133,11 @@ def run_eda():
     
     discount_counts = df['할인율'].dropna().value_counts().sort_index()
     
-    sns.barplot(x=discount_counts.index.astype(int), y=discount_counts.values, palette="crest")
+    sns.barplot(x=discount_counts.index.astype(int), y=discount_counts.values, hue=discount_counts.index.astype(int), palette="crest", legend=False)
     plt.title("교보문고 베스트셀러 도서 할인율 빈도", fontsize=14, fontweight='bold', pad=15)
     plt.xlabel("할인율 (%)", fontsize=12)
     plt.ylabel("도서 수 (권)", fontsize=12)
+    plt.grid(True, axis='y', linestyle='--', alpha=0.5)
     
     # 각 막대 위에 값 표시
     for i, val in enumerate(discount_counts.values):
@@ -141,7 +155,6 @@ def run_eda():
     # -------------------------------------------------------------
     print("3-5. 도서 분야(태그) 빈도 분석 및 워드클라우드 작성 중...")
     
-    # 교보문고는 '태그' 컬럼에 카테고리 명이 쉼표나 단어로 들어있음
     all_tags = []
     for tag_str in df['태그'].dropna():
         tags = [t.strip() for t in tag_str.split(',') if t.strip()]
