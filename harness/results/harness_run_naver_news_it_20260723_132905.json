@@ -1,0 +1,29 @@
+{
+    "project": "naver_news_it",
+    "timestamp": "20260723_132905",
+    "pass_rate": 83.33333333333334,
+    "pipeline_ok": true,
+    "pipeline_error": "",
+    "metrics": {
+        "csv": {
+            "status": "FAIL",
+            "reason": "필수 컬럼 누락: ['press']"
+        },
+        "excel": {
+            "status": "PASS",
+            "reason": "시트 2개 구성 및 요약 테이블 포맷 완료"
+        },
+        "eda": {
+            "status": "PASS",
+            "reason": "마크다운 문서 골격 및 이미지 삽입 정상"
+        },
+        "docx": {
+            "status": "PASS",
+            "reason": "단락 수: 8, 표 개수: 1 확인 완료"
+        },
+        "pptx": {
+            "status": "PASS",
+            "reason": "총 3장 슬라이드 구성 완료"
+        }
+    }
+}
