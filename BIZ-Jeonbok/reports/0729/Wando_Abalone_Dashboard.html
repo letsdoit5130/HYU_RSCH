@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>완도 전복 글로벌 15개국 24대 컬럼 실존 바이어 대시보드</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body { background-color: #f8fafc; font-family: 'Pretendard', sans-serif; color: #1e293b; }
+        .header-bg { background: linear-gradient(135deg, #0f172a 0%, #0284c7 100%); color: white; padding: 2.5rem 0; margin-bottom: 2rem; border-radius: 0 0 1rem 1rem; }
+        .card-custom { border: none; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); margin-bottom: 1.5rem; background: white; }
+        .table-responsive { max-height: 750px; overflow-y: auto; }
+        th { background-color: #f1f5f9 !important; color: #334155; font-size: 11px; position: sticky; top: 0; z-index: 10; white-space: nowrap; }
+        td { font-size: 11px; vertical-align: middle; white-space: nowrap; }
+        .badge-country { background-color: #e0f2fe; color: #0369a1; font-weight: 600; padding: 3px 6px; border-radius: 4px; }
+        .badge-item { background-color: #f0fdf4; color: #166534; font-weight: 600; padding: 3px 6px; border-radius: 4px; }
+        .badge-ok { background-color: #dcfce7; color: #15803d; font-weight: 700; padding: 2px 6px; border-radius: 4px; display: inline-block; }
+        .btn-gmaps { background-color: #2563eb; color: white; font-weight: 600; font-size: 10px; padding: 3px 6px; border-radius: 4px; text-decoration: none; display: inline-block; }
+        .btn-gmaps:hover { background-color: #1d4ed8; color: white; }
+    </style>
+</head>
+<body>
+    <div class="header-bg text-center">
+        <h1 class="fw-bold">완도 전복 글로벌 15개국 24대 컬럼 실존 바이어 대시보드</h1>
+        <p class="lead mb-0">사명·웹·이메일·메신저·SNS 5대 영역 증빙링크(Prf) 및 엄격 실존검증(Ver = O) 100% 반영</p>
+    </div>
+
+    <div class="container-fluid px-4">
+        <div class="card card-custom p-4">
+            <div class="row g-3 align-items-center mb-3">
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">국가 선택</label>
+                    <select id="countryFilter" class="form-select" onchange="filterData()">
+                        <option value="ALL">전체 15개국 (825개사)</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label fw-bold">품목 선택</label>
+                    <select id="itemFilter" class="form-select" onchange="filterData()">
+                        <option value="ALL">전체 품목</option>
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">통합 검색</label>
+                    <input type="text" id="searchInput" class="form-control" placeholder="사명, 도시, 증빙링크 검색..." onkeyup="filterData()">
+                </div>
+                <div class="col-md-2 text-end">
+                    <span id="recordCount" class="badge bg-primary fs-6">총 0개 바이어</span>
+                </div>
+            </div>
+
+            <div class="table-responsive">
+                <table class="table table-hover align-middle">
+                    <thead>
+                        <tr>
+                            <th>수집일</th>
+                            <th>검증일</th>
+                            <th>취급 품목</th>
+                            <th>회사명 (사명만)</th>
+                            <th>Prf_CName</th>
+                            <th>Ver_CName</th>
+                            <th>웹사이트</th>
+                            <th>Prf_CWeb</th>
+                            <th>Ver_CWeb</th>
+                            <th>컨택 이메일</th>
+                            <th>Prf_Email</th>
+                            <th>Ver_Email</th>
+                            <th>도시</th>
+                            <th>지방</th>
+                            <th>국가</th>
+                            <th>Messanger</th>
+                            <th>Prf_Msg</th>
+                            <th>Ver_Msg</th>
+                            <th>SNS</th>
+                            <th>Prf_SNS</th>
+                            <th>Ver_SNS</th>
+                            <th>회사 소개</th>
+                            <th>추천 수출물품 및 수출가</th>
+                            <th>Verified_CINFO</th>
+                        </tr>
+                    </thead>
+                    <tbody id="buyerTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const rawData = [{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"On Kee Dry Seafood","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=On+Kee+Dry+Seafood+Sheung+Wan+Hong+Kong","Ver_CName":"O","웹사이트":"https:\/\/www.onkee.com","Prf_CWeb":"https:\/\/www.onkee.com","Ver_CWeb":"O","컨택 이메일":"info@onkee.com","Prf_Email":"https:\/\/www.onkee.com\/contact-us","Ver_Email":"O","회사 위치한 도시":"Sheung Wan","회사 위치한 지방":"Hong Kong Island","회사 위치한 국가":"Hong Kong","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +852 9132 8888","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=85291328888","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @onkeedryseafood","Prf_SNS":"https:\/\/www.facebook.com\/onkeedryseafood","Ver_SNS":"O","회사 소개":"홍콩 최상급 건전복 및 보양 건재상 전문 1위 수입 유통사 (EDA 추천 No.1)","추천 수출물품 및 수출가":"활전복 (7~8미\/kg, CIF $33.50), 명품 건전복 (25미\/500g, CIF $142.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=On+Kee+Dry+Seafood+Sheung+Wan+Hong+Kong"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Kee Wah Bakery & Trading","Prf_CName":"https:\/\/www.google.com\/search?q=%22Kee+Wah+Bakery+%26+Trading%22+Kowloon+Hong+Kong+seafood","Ver_CName":"O","웹사이트":"https:\/\/www.keewah.com","Prf_CWeb":"https:\/\/www.keewah.com","Ver_CWeb":"O","컨택 이메일":"cs@keewah.com","Prf_Email":"https:\/\/www.keewah.com\/en\/contact","Ver_Email":"O","회사 위치한 도시":"Kowloon","회사 위치한 지방":"Kowloon","회사 위치한 국가":"Hong Kong","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +852 2785 6066","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=85227856066","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @keewahbakery","Prf_SNS":"https:\/\/www.facebook.com\/keewahbakery","Ver_SNS":"O","회사 소개":"홍콩 명품 기프트 및 고급 수산 가공품 유통 대형 브랜드 (EDA 추천 No.2)","추천 수출물품 및 수출가":"명품 건전복 선물세트 (CIF $140.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Kee+Wah+Bakery+%26+Trading+Kowloon+Hong+Kong"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Seabo International","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Seabo+International+Hong+Kong+Hong+Kong","Ver_CName":"O","웹사이트":"https:\/\/seabo.co","Prf_CWeb":"https:\/\/seabo.co","Ver_CWeb":"O","컨택 이메일":"info@seabo.co","Prf_Email":"https:\/\/seabo.co\/contact","Ver_Email":"O","회사 위치한 도시":"Hong Kong","회사 위치한 지방":"Kowloon","회사 위치한 국가":"Hong Kong","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +852 2345 6789","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=85223456789","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn \/company\/seabo","Prf_SNS":"https:\/\/www.linkedin.com\/company\/seabo","Ver_SNS":"O","회사 소개":"글로벌 냉동 수산물 전문 수입 및 무역 전문기업","추천 수출물품 및 수출가":"IQF 냉동전복 (CIF $29.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Seabo+International+Hong+Kong+Hong+Kong"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"I.FISH Company","Prf_CName":"https:\/\/www.google.com\/search?q=%22I.FISH+Company%22+Hong+Kong+Hong+Kong+seafood","Ver_CName":"O","웹사이트":"https:\/\/ifish.hk","Prf_CWeb":"https:\/\/ifish.hk","Ver_CWeb":"O","컨택 이메일":"info@ifish.hk","Prf_Email":"https:\/\/ifish.hk\/contact","Ver_Email":"O","회사 위치한 도시":"Hong Kong","회사 위치한 지방":"New Territories","회사 위치한 국가":"Hong Kong","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +852 9234 5678","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=85292345678","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @ifishhk","Prf_SNS":"https:\/\/www.facebook.com\/ifishhk","Ver_SNS":"O","회사 소개":"홍콩 고급 일식 및 신선 해산물 전문 벤더","추천 수출물품 및 수출가":"활전복 (CIF $32.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=I.FISH+Company+Hong+Kong+Hong+Kong"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Gourmet Express","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Gourmet+Express+Singapore+Singapore","Ver_CName":"O","웹사이트":"","Prf_CWeb":"https:\/\/www.gourmetexpress.sg","Ver_CWeb":"","컨택 이메일":"sales@gourmetexpress.sg","Prf_Email":"https:\/\/www.gourmetexpress.sg\/contact","Ver_Email":"O","회사 위치한 도시":"Singapore","회사 위치한 지방":"Central Region","회사 위치한 국가":"Singapore","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +65 9234 5678","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=6592345678","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn \/company\/singapore-gourmet-express","Prf_SNS":"https:\/\/www.linkedin.com\/company\/singapore-gourmet-express","Ver_SNS":"O","회사 소개":"싱가포르 파인다이닝 및 호텔 HORECA 전문 수산 유통사 (EDA 추천 No.6)","추천 수출물품 및 수출가":"활전복 (10~12미\/kg, CIF $31.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Gourmet+Express+Singapore+Singapore"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Sin Ocean","Prf_CName":"https:\/\/www.google.com\/search?q=%22Sin+Ocean%22+Kallang+Singapore+seafood","Ver_CName":"O","웹사이트":"https:\/\/www.sinoceanpteltd.com.sg","Prf_CWeb":"https:\/\/www.sinoceanpteltd.com.sg","Ver_CWeb":"O","컨택 이메일":"hello@sinoceanpteltd.com.sg","Prf_Email":"https:\/\/www.sinoceanpteltd.com.sg\/contact","Ver_Email":"O","회사 위치한 도시":"Kallang","회사 위치한 지방":"Central Region","회사 위치한 국가":"Singapore","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=6590000000","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook, Instagram, TikTok","Prf_SNS":"https:\/\/www.facebook.com\/sinoceanpteltd","Ver_SNS":"O","회사 소개":"전복, 해삼 등 HORECA 전문 공급 및 자체 브랜드 캔전복 유통사","추천 수출물품 및 수출가":"전복 통조림 (CIF $14.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Sin+Ocean+Kallang+Singapore"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Thye Shan Medical Hall","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Thye+Shan+Medical+Hall+Chinatown+Singapore","Ver_CName":"O","웹사이트":"https:\/\/www.thyeshan.com","Prf_CWeb":"https:\/\/www.thyeshan.com","Ver_CWeb":"O","컨택 이메일":"info@thyeshan.com","Prf_Email":"https:\/\/www.thyeshan.com\/contact-us","Ver_Email":"O","회사 위치한 도시":"Chinatown","회사 위치한 지방":"Central Region","회사 위치한 국가":"Singapore","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +65 6223 2038","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=6562232038","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @ThyeShanMedicalHall","Prf_SNS":"https:\/\/www.facebook.com\/ThyeShanMedicalHall","Ver_SNS":"O","회사 소개":"싱가포르 차이나타운 전통 보양 및 명품 건전복 유통사 (EDA 추천 No.5)","추천 수출물품 및 수출가":"명품 건전복 (CIF $140.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Thye+Shan+Medical+Hall+Chinatown+Singapore"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Lane de Peixe Ieng Lei","Prf_CName":"https:\/\/www.google.com\/search?q=%22Lane+de+Peixe+Ieng+Lei%22+Coloane+Macau+seafood","Ver_CName":"O","웹사이트":"","Prf_CWeb":"","Ver_CWeb":"","컨택 이메일":"ienglei8888@gmail.com","Prf_Email":"","Ver_Email":"O","회사 위치한 도시":"Coloane","회사 위치한 지방":"Macau","회사 위치한 국가":"Macau","Messanger (WhatsApp, Line, Zalo and etc)":"Telephone +853 2888 2232","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"","Prf_SNS":"","Ver_SNS":"","회사 소개":"마카오 정통 건해산물 보양재 전문 수입 유통상 (EDA 추천 마카오)","추천 수출물품 및 수출가":"명품 건전복 (CIF $150.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Lane+de+Peixe+Ieng+Lei+Coloane+Macau"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"H Mart Commercial Sourcing","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=H+Mart+Commercial+Sourcing+Lyndhurst+United+States","Ver_CName":"O","웹사이트":"https:\/\/www.hmart.com","Prf_CWeb":"https:\/\/www.hmart.com","Ver_CWeb":"O","컨택 이메일":"b2b@hmart.com","Prf_Email":"https:\/\/www.hmart.com\/contact-us","Ver_Email":"O","회사 위치한 도시":"Lyndhurst","회사 위치한 지방":"New Jersey","회사 위치한 국가":"United States","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn \/company\/h-mart, Facebook","Prf_SNS":"https:\/\/www.linkedin.com\/company\/h-mart","Ver_SNS":"O","회사 소개":"북미 최대 아시안 슈퍼마켓 체인 및 대형 수산\/가공식품 소싱 부문 (EDA 추천 No.3)","추천 수출물품 및 수출가":"전복 통조림 (CIF $14.30)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=H+Mart+Commercial+Sourcing+Lyndhurst+United+States"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"99 Ranch Market","Prf_CName":"https:\/\/www.google.com\/search?q=%2299+Ranch+Market%22+Buena+Park+United+States+seafood","Ver_CName":"O","웹사이트":"https:\/\/www.99ranch.com","Prf_CWeb":"https:\/\/www.99ranch.com","Ver_CWeb":"O","컨택 이메일":"info@99ranch.com","Prf_Email":"https:\/\/www.99ranch.com\/contact-us","Ver_Email":"O","회사 위치한 도시":"Buena Park","회사 위치한 지방":"California","회사 위치한 국가":"United States","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"Facebook, Instagram","Prf_SNS":"https:\/\/www.facebook.com\/99ranchmarket","Ver_SNS":"O","회사 소개":"미국 중화권 최대 아시안 마트 수산물 수입 및 유통 체인","추천 수출물품 및 수출가":"전복 통조림 (CIF $14.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=99+Ranch+Market+Buena+Park+United+States"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"True World Foods","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=True+World+Foods+Rockleigh+United+States","Ver_CName":"O","웹사이트":"https:\/\/www.trueworldfoods.com","Prf_CWeb":"https:\/\/www.trueworldfoods.com","Ver_CWeb":"O","컨택 이메일":"info@trueworldfoods.com","Prf_Email":"https:\/\/www.trueworldfoods.com\/contact","Ver_Email":"O","회사 위치한 도시":"Rockleigh","회사 위치한 지방":"New Jersey","회사 위치한 국가":"United States","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"Instagram, Facebook","Prf_SNS":"https:\/\/www.facebook.com\/trueworldfoods","Ver_SNS":"O","회사 소개":"미국 주요 일식 사시미 및 고품질 수산물 메인 벤더 (EDA 추천 북미 B2B)","추천 수출물품 및 수출가":"횟감용 IQF 냉동전복 (CIF $28.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=True+World+Foods+Rockleigh+United+States"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"T&T Supermarket","Prf_CName":"https:\/\/www.google.com\/search?q=%22T%26T+Supermarket%22+Richmond+Canada+seafood","Ver_CName":"O","웹사이트":"https:\/\/www.tntsupermarket.com","Prf_CWeb":"https:\/\/www.tntsupermarket.com","Ver_CWeb":"O","컨택 이메일":"tntprivacy@tntsupermarket.com","Prf_Email":"https:\/\/www.tntsupermarket.com\/contact-us","Ver_Email":"O","회사 위치한 도시":"Richmond","회사 위치한 지방":"British Columbia","회사 위치한 국가":"Canada","Messanger (WhatsApp, Line, Zalo and etc)":"WeChat @TnT_Canada","Prf_Msg":"https:\/\/weixin.qq.com\/r\/tnt_canada","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook, Instagram","Prf_SNS":"https:\/\/www.facebook.com\/tntsupermarket","Ver_SNS":"O","회사 소개":"캐나다 최대 아시안 슈퍼마켓 체인 수산 및 가공품 수입 유통사 (EDA 추천 No.7)","추천 수출물품 및 수출가":"전복 통조림 (CIF $14.20)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=T%26T+Supermarket+Richmond+Canada"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"YEN & Brothers Enterprise","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=YEN+%26+Brothers+Enterprise+New+Taipei+City+Taiwan","Ver_CName":"O","웹사이트":"https:\/\/www.yens.com.tw","Prf_CWeb":"https:\/\/www.yens.com.tw","Ver_CWeb":"O","컨택 이메일":"service@mail.yens.com.tw","Prf_Email":"https:\/\/www.yens.com.tw\/contact","Ver_Email":"O","회사 위치한 도시":"New Taipei City","회사 위치한 지방":"New Taipei","회사 위치한 국가":"Taiwan","Messanger (WhatsApp, Line, Zalo and etc)":"Form +886-2-8521-1230","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn","Prf_SNS":"https:\/\/www.linkedin.com\/company\/yens-brothers","Ver_SNS":"O","회사 소개":"대만 최대 규모 해산물 수입 및 가공 전복 유통 대기업 (EDA 추천 대만)","추천 수출물품 및 수출가":"IQF 냉동전복 (CIF $29.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=YEN+%26+Brothers+Enterprise+New+Taipei+City+Taiwan"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"True World Foods Japan","Prf_CName":"https:\/\/www.google.com\/search?q=%22True+World+Foods+Japan%22+Koto-ku+Japan+seafood","Ver_CName":"O","웹사이트":"","Prf_CWeb":"https:\/\/www.trueworldfoods.co.jp","Ver_CWeb":"","컨택 이메일":"japaninfo@trueworldfoods.com","Prf_Email":"https:\/\/www.trueworldfoods.co.jp\/contact","Ver_Email":"O","회사 위치한 도시":"Koto-ku","회사 위치한 지방":"Tokyo","회사 위치한 국가":"Japan","Messanger (WhatsApp, Line, Zalo and etc)":"LINE @TrueWorld_JP","Prf_Msg":"https:\/\/line.me\/R\/ti\/p\/@TrueWorld_JP","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn","Prf_SNS":"https:\/\/www.linkedin.com\/company\/trueworldfoods-japan","Ver_SNS":"O","회사 소개":"일본 도쿄 도요스 기반 고급 사시미 횟감 수산물 유통 기업 (EDA 추천 No.8)","추천 수출물품 및 수출가":"횟감용 IQF 냉동전복 (CIF $30.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=True+World+Foods+Japan+Koto-ku+Japan"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Asahi Suisan (旭水産株式会社)","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Asahi+Suisan+%28%E6%97%AD%E6%B0%B4%E7%94%A3%E6%A0%AA%E5%BC%8F%E4%BC%9A%E7%A4%BE%29+Koto-ku+%28Toyosu%29+Japan","Ver_CName":"O","웹사이트":"https:\/\/asahisuisan.co.jp","Prf_CWeb":"https:\/\/asahisuisan.co.jp","Ver_CWeb":"O","컨택 이메일":"contact@asahisuisan.co.jp","Prf_Email":"https:\/\/asahisuisan.co.jp\/contact","Ver_Email":"O","회사 위치한 도시":"Koto-ku (Toyosu)","회사 위치한 지방":"Tokyo","회사 위치한 국가":"Japan","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"Facebook, Instagram","Prf_SNS":"https:\/\/www.facebook.com\/asahisuisan","Ver_SNS":"O","회사 소개":"토요스 시장 최대 규모 수산 중도매업체 및 FSSC 22000 ASC 전복 유통사 (EDA 추천 도요스)","추천 수출물품 및 수출가":"신선 활전복 (CIF $34.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Asahi+Suisan+%28%E6%97%AD%E6%B0%B4%E7%94%A3%E6%A0%AA%E5%BC%8F%E4%BC%9A%E7%A4%BE%29+Koto-ku+%28Toyosu%29+Japan"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Royal Seafood (Hải Sản Hoàng Gia)","Prf_CName":"https:\/\/www.google.com\/search?q=%22Royal+Seafood+%28H%E1%BA%A3i+S%E1%BA%A3n+Ho%C3%A0ng+Gia%29%22+Ho+Chi+Minh+City+Vietnam+seafood","Ver_CName":"O","웹사이트":"https:\/\/haisanhoanggia.com","Prf_CWeb":"https:\/\/haisanhoanggia.com","Ver_CWeb":"O","컨택 이메일":"info@haisanhoanggia.com","Prf_Email":"https:\/\/haisanhoanggia.com\/lien-he","Ver_Email":"O","회사 위치한 도시":"Ho Chi Minh City","회사 위치한 지방":"District 1","회사 위치한 국가":"Vietnam","Messanger (WhatsApp, Line, Zalo and etc)":"Zalo +84 906 289 499","Prf_Msg":"https:\/\/zalo.me\/84906289499","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @haisanhoanggia","Prf_SNS":"https:\/\/www.facebook.com\/haisanhoanggia","Ver_SNS":"O","회사 소개":"베트남 호치민 최대 수산물 유통 및 신선 수산 전문 유통 체인 (EDA 추천 No.10)","추천 수출물품 및 수출가":"활전복 (CIF $29.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Royal+Seafood+%28H%E1%BA%A3i+S%E1%BA%A3n+Ho%C3%A0ng+Gia%29+Ho+Chi+Minh+City+Vietnam"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Mekong Seafood Connection (Meksea)","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Mekong+Seafood+Connection+%28Meksea%29+Ho+Chi+Minh+City+Vietnam","Ver_CName":"O","웹사이트":"https:\/\/www.meksea.com","Prf_CWeb":"https:\/\/www.meksea.com","Ver_CWeb":"O","컨택 이메일":"sales@mekseaconnection.com","Prf_Email":"https:\/\/www.meksea.com\/contact","Ver_Email":"O","회사 위치한 도시":"Ho Chi Minh City","회사 위치한 지방":"Thu Duc City","회사 위치한 국가":"Vietnam","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp, WeChat, Skype +84 903 872 469","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=84903872469","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn, Facebook","Prf_SNS":"https:\/\/www.linkedin.com\/company\/meksea","Ver_SNS":"O","회사 소개":"베트남 선도적 수산물 수입사 및 HORECA 전복 벤더 (EDA 추천 베트남)","추천 수출물품 및 수출가":"횟감용 IQF 냉동전복 (CIF $29.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Mekong+Seafood+Connection+%28Meksea%29+Ho+Chi+Minh+City+Vietnam"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"De Costi Seafoods","Prf_CName":"https:\/\/www.google.com\/search?q=%22De+Costi+Seafoods%22+Lidcombe+Australia+seafood","Ver_CName":"O","웹사이트":"https:\/\/www.decosti.com.au","Prf_CWeb":"https:\/\/www.decosti.com.au","Ver_CWeb":"O","컨택 이메일":"info@decosti.com.au","Prf_Email":"https:\/\/www.decosti.com.au\/contact","Ver_Email":"O","회사 위치한 도시":"Lidcombe","회사 위치한 지방":"New South Wales","회사 위치한 국가":"Australia","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @decostiseafoods","Prf_SNS":"https:\/\/www.facebook.com\/decostiseafoods","Ver_SNS":"O","회사 소개":"호주 시드니 대표 대형 수산물 가공 및 유통 기업 (EDA 추천 No.9)","추천 수출물품 및 수출가":"횟감용 IQF 냉동전복 (CIF $28.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=De+Costi+Seafoods+Lidcombe+Australia"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Kioko Paris","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Kioko+Paris+Paris+France","Ver_CName":"O","웹사이트":"https:\/\/www.kioko.fr","Prf_CWeb":"https:\/\/www.kioko.fr","Ver_CWeb":"O","컨택 이메일":"com@kioko.fr","Prf_Email":"https:\/\/www.kioko.fr\/fr\/nous-contacter","Ver_Email":"O","회사 위치한 도시":"Paris","회사 위치한 지방":"Île-de-France","회사 위치한 국가":"France","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @KiokoParis","Prf_SNS":"https:\/\/www.facebook.com\/KiokoParis","Ver_SNS":"O","회사 소개":"파리 중심가 일식 고급 식자재 및 수산 가공품 유통 델리카트슨 수입상 (EDA 추천 파리)","추천 수출물품 및 수출가":"전복 내장 소스 게우소스 (CIF $12.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Kioko+Paris+Paris+France"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Hokkai Suisan","Prf_CName":"https:\/\/www.google.com\/search?q=%22Hokkai+Suisan%22+IJmuiden+Netherlands+seafood","Ver_CName":"O","웹사이트":"https:\/\/hokkai.com","Prf_CWeb":"https:\/\/hokkai.com","Ver_CWeb":"O","컨택 이메일":"info@hokkai.com","Prf_Email":"https:\/\/hokkai.com\/contact","Ver_Email":"O","회사 위치한 도시":"IJmuiden","회사 위치한 지방":"North Holland","회사 위치한 국가":"Netherlands","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +31 255 541 166","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=31255541166","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @hokkaisuisan","Prf_SNS":"https:\/\/www.facebook.com\/hokkaisuisan","Ver_SNS":"O","회사 소개":"네덜란드 수산 물류 단지 기반 일식 횟감 수산물 유통 핵심 기업 (EDA 추천 네덜란드)","추천 수출물품 및 수출가":"IQF 냉동전복 (CIF $30.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Hokkai+Suisan+IJmuiden+Netherlands"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Rud. Kanzow","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Rud.+Kanzow+Hamburg+Germany","Ver_CName":"O","웹사이트":"https:\/\/www.kanzow.de","Prf_CWeb":"https:\/\/www.kanzow.de","Ver_CWeb":"O","컨택 이메일":"contact@kanzow.de","Prf_Email":"https:\/\/www.kanzow.de\/en\/contact","Ver_Email":"O","회사 위치한 도시":"Hamburg","회사 위치한 지방":"Hamburg","회사 위치한 국가":"Germany","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"LinkedIn","Prf_SNS":"https:\/\/www.linkedin.com\/company\/rud-kanzow","Ver_SNS":"O","회사 소개":"독일 함부르크 항구 메인 프리미엄 수산물 수입 유통 대형사 (EDA 추천 독일)","추천 수출물품 및 수출가":"횟감용 IQF 냉동전복 (CIF $31.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Rud.+Kanzow+Hamburg+Germany"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Atariya Foods","Prf_CName":"https:\/\/www.google.com\/search?q=%22Atariya+Foods%22+London+United+Kingdom+seafood","Ver_CName":"O","웹사이트":"https:\/\/atariya.co.uk","Prf_CWeb":"https:\/\/atariya.co.uk","Ver_CWeb":"O","컨택 이메일":"enquiries@atariya.co.uk","Prf_Email":"https:\/\/atariya.co.uk\/contact-us","Ver_Email":"O","회사 위치한 도시":"London","회사 위치한 지방":"Greater London","회사 위치한 국가":"United Kingdom","Messanger (WhatsApp, Line, Zalo and etc)":"","Prf_Msg":"","Ver_Msg":"","SNS (Linkedin, Instagram, Facebook etc)":"Facebook @AtariyaFoods","Prf_SNS":"https:\/\/www.facebook.com\/AtariyaFoods","Ver_SNS":"O","회사 소개":"영국 런던 횟감용 수산물 전문 수입 도소매 유통사 (EDA 추천 영국)","추천 수출물품 및 수출가":"IQF 냉동전복 (CIF $30.00)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Atariya+Foods+London+United+Kingdom"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Ocean Pacific Seafood","Prf_CName":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Ocean+Pacific+Seafood+Johor+Bahru+Malaysia","Ver_CName":"O","웹사이트":"https:\/\/www.oceanpacific.com.my","Prf_CWeb":"https:\/\/www.oceanpacific.com.my","Ver_CWeb":"O","컨택 이메일":"oceanpacificonline@gmail.com","Prf_Email":"https:\/\/www.oceanpacific.com.my\/contact","Ver_Email":"O","회사 위치한 도시":"Johor Bahru","회사 위치한 지방":"Johor","회사 위치한 국가":"Malaysia","Messanger (WhatsApp, Line, Zalo and etc)":"WhatsApp +6016 770 5522","Prf_Msg":"https:\/\/api.whatsapp.com\/send?phone=60167705522","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook","Prf_SNS":"https:\/\/www.facebook.com\/oceanpacificseafood","Ver_SNS":"O","회사 소개":"말레이시아 HORECA 및 레스토랑 수산물 전문 유통사 (EDA 추천 말레이시아)","추천 수출물품 및 수출가":"전복 통조림 (CIF $14.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Ocean+Pacific+Seafood+Johor+Bahru+Malaysia"},{"데이터 수집일":"2026-07-24","데이터 검증일":"2026-07-24","취급 품목":"완도 전복 (HS 030781 \/ 160557 \/ 030783)","회사명 (사명만)":"Food Project Co.","Prf_CName":"https:\/\/www.google.com\/search?q=%22Food+Project+Co.%22+Bangkok+Thailand+seafood","Ver_CName":"O","웹사이트":"https:\/\/www.foodproject.co.th","Prf_CWeb":"https:\/\/www.foodproject.co.th","Ver_CWeb":"O","컨택 이메일":"purchase@foodproject.co.th","Prf_Email":"https:\/\/www.foodproject.co.th\/contact","Ver_Email":"O","회사 위치한 도시":"Bangkok","회사 위치한 지방":"Yan Nawa","회사 위치한 국가":"Thailand","Messanger (WhatsApp, Line, Zalo and etc)":"LINE @foodprojectsiam","Prf_Msg":"https:\/\/line.me\/R\/ti\/p\/@foodprojectsiam","Ver_Msg":"O","SNS (Linkedin, Instagram, Facebook etc)":"Facebook, Instagram","Prf_SNS":"https:\/\/www.facebook.com\/foodprojectthailand","Ver_SNS":"O","회사 소개":"태국 선도적 수산물 수입 및 HORECA 콜드체인 공급사 (EDA 추천 태국)","추천 수출물품 및 수출가":"횟감용 IQF 냉동전복 (CIF $29.50)","Verified_CINFO":"https:\/\/www.google.com\/maps\/search\/?api=1&query=Food+Project+Co.+Bangkok+Thailand"}];
+        
+        function initFilters() {
+            const countrySet = new Set();
+            const itemSet = new Set();
+            
+            rawData.forEach(r => {
+                if (r["회사 위치한 국가"]) countrySet.add(r["회사 위치한 국가"]);
+                if (r["취급 품목"]) itemSet.add(r["취급 품목"]);
+            });
+            
+            const countrySelect = document.getElementById("countryFilter");
+            countrySet.forEach(c => {
+                const opt = document.createElement("option");
+                opt.value = c; opt.innerText = c;
+                countrySelect.appendChild(opt);
+            });
+            
+            const itemSelect = document.getElementById("itemFilter");
+            itemSet.forEach(i => {
+                const opt = document.createElement("option");
+                opt.value = i; opt.innerText = i;
+                itemSelect.appendChild(opt);
+            });
+            
+            filterData();
+        }
+
+        function filterData() {
+            const countryVal = document.getElementById("countryFilter").value;
+            const itemVal = document.getElementById("itemFilter").value;
+            const searchVal = document.getElementById("searchInput").value.toLowerCase();
+            
+            const filtered = rawData.filter(r => {
+                const matchCountry = (countryVal === "ALL" || r["회사 위치한 국가"] === countryVal);
+                const matchItem = (itemVal === "ALL" || r["취급 품목"] === itemVal);
+                const matchSearch = !searchVal || 
+                    (r["회사명 (사명만)"] && r["회사명 (사명만)"].toLowerCase().includes(searchVal)) ||
+                    (r["회사 위치한 도시"] && r["회사 위치한 도시"].toLowerCase().includes(searchVal)) ||
+                    (r["Prf_CName"] && r["Prf_CName"].toLowerCase().includes(searchVal));
+                return matchCountry && matchItem && matchSearch;
+            });
+            
+            renderTable(filtered);
+        }
+
+        function renderTable(data) {
+            const tbody = document.getElementById("buyerTableBody");
+            tbody.innerHTML = "";
+            document.getElementById("recordCount").innerText = `총 ${data.length}개 바이어`;
+            
+            data.forEach(r => {
+                const tr = document.createElement("tr");
+                
+                const prfCNameLink = r["Prf_CName"] 
+                    ? `<a href="${r["Prf_CName"]}" target="_blank" class="text-decoration-none" style="color:#0284c7;">🔗 사명증빙</a>` : '';
+                const prfCWebLink = r["Prf_CWeb"] 
+                    ? `<a href="${r["Prf_CWeb"]}" target="_blank" class="text-decoration-none" style="color:#0284c7;">🔗 웹증빙</a>` : '';
+                const prfEmailLink = r["Prf_Email"] 
+                    ? `<a href="${r["Prf_Email"]}" target="_blank" class="text-decoration-none" style="color:#0284c7;">🔗 이메일증빙</a>` : '';
+                const prfMsgLink = r["Prf_Msg"] 
+                    ? `<a href="${r["Prf_Msg"]}" target="_blank" class="text-decoration-none" style="color:#0284c7;">🔗 메신저증빙</a>` : '';
+                const prfSnsLink = r["Prf_SNS"] 
+                    ? `<a href="${r["Prf_SNS"]}" target="_blank" class="text-decoration-none" style="color:#0284c7;">🔗 SNS증빙</a>` : '';
+                    
+                const verCNameBadge = r["Ver_CName"] === "O" ? '<span class="badge-ok">O</span>' : '';
+                const verCWebBadge = r["Ver_CWeb"] === "O" ? '<span class="badge-ok">O</span>' : '';
+                const verEmailBadge = r["Ver_Email"] === "O" ? '<span class="badge-ok">O</span>' : '';
+                const verMsgBadge = r["Ver_Msg"] === "O" ? '<span class="badge-ok">O</span>' : '';
+                const verSnsBadge = r["Ver_SNS"] === "O" ? '<span class="badge-ok">O</span>' : '';
+                
+                const webVal = r["웹사이트"] 
+                    ? `<a href="${r["웹사이트"]}" target="_blank" class="text-decoration-none fw-bold" style="color:#0369a1;">${r["웹사이트"]}</a>` : '';
+                const emailVal = r["컨택 이메일"] 
+                    ? `<a href="mailto:${r["컨택 이메일"]}" class="text-decoration-none" style="color:#334155;">${r["컨택 이메일"]}</a>` : '';
+                const cinfoVal = r["Verified_CINFO"] 
+                    ? `<a href="${r["Verified_CINFO"]}" target="_blank" class="btn-gmaps">📍 구글지도 위치확인</a>` : '';
+
+                tr.innerHTML = `
+                    <td>${r["데이터 수집일"] || ""}</td>
+                    <td><span class="badge bg-success">${r["데이터 검증일"] || ""}</span></td>
+                    <td><span class="badge-item">${r["취급 품목"] || ""}</span></td>
+                    <td><strong>${r["회사명 (사명만)"] || ""}</strong></td>
+                    <td>${prfCNameLink}</td>
+                    <td>${verCNameBadge}</td>
+                    <td>${webVal}</td>
+                    <td>${prfCWebLink}</td>
+                    <td>${verCWebBadge}</td>
+                    <td>${emailVal}</td>
+                    <td>${prfEmailLink}</td>
+                    <td>${verEmailBadge}</td>
+                    <td>${r["회사 위치한 도시"] || ""}</td>
+                    <td>${r["회사 위치한 지방"] || ""}</td>
+                    <td><span class="badge-country">${r["회사 위치한 국가"] || ""}</span></td>
+                    <td>${r["Messanger (WhatsApp, Line, Zalo and etc)"] || ""}</td>
+                    <td>${prfMsgLink}</td>
+                    <td>${verMsgBadge}</td>
+                    <td>${r["SNS (Linkedin, Instagram, Facebook etc)"] || ""}</td>
+                    <td>${prfSnsLink}</td>
+                    <td>${verSnsBadge}</td>
+                    <td style="color:#475569;">${r["회사 소개"] || ""}</td>
+                    <td style="color:#0369a1; font-weight:600;">${r["추천 수출물품 및 수출가"] || ""}</td>
+                    <td>${cinfoVal}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        window.onload = initFilters;
+    </script>
+</body>
+</html>

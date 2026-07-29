@@ -1,0 +1,42 @@
+name: 4x Daily Abalone Partner Sourcing Pipeline (KST 06:00, 12:00, 18:00, 00:00)
+
+on:
+  schedule:
+    # 매일 4회 무인 자동 실행 (KST 06:00, 12:00, 18:00, 00:00 = UTC 21:00, 03:00, 09:00, 15:00)
+    - cron: '0 3,9,15,21 * * *'
+  workflow_dispatch:
+    inputs:
+      target_country:
+        description: '조사 대상 타깃 국가 (예: Japan, United States, Hong Kong, 전체)'
+        required: true
+        default: '전체'
+
+jobs:
+  abalone-sourcing-4x-daily:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install uv and dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          uv pip install --system pandas openpyxl tabulate
+
+      - name: Run Abalone Partner Sourcing Agent
+        run: |
+          python BIZ-Jeonbok/src/partner_sourcing_agent.py --priority all
+
+      - name: Auto Commit and Push Updated Abalone Leads
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+          git add BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md BIZ-Jeonbok/data/abalone_buyers_leads.xlsx BIZ-Jeonbok/data/abalone_sourcing_history.csv BIZ-Jeonbok/ARTIFACTS/Abalone_Buyers_Lead_List.md
+          git commit -m "Automated 4x Daily Abalone Lead Update [skip ci]" || exit 0
+          git push
