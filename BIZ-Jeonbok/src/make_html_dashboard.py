@@ -1,9 +1,9 @@
 """
-BIZ-전복_Gathered_EDA_Report.md 기반 반응형 HTML5 대시보드 자동 생성 스크립트
+BIZ-전복_Gathered_EDA_Report.md 기반 TOP 10 유망국가 10개국 완비 반응형 HTML5 대시보드 생성 스크립트
 
-이 스크립트는 BIZ-전복_Gathered_EDA_Report.md 보고서의 무역 분석 수치, 
-미수(Size) 가격 구조 표, 15개 차트 갤러리 및 로컬 디스트리뷰터 수집 데이터를 
-Chart.js 시각화 차트와 반응형 CSS Grid 그리드가 적용된 웹 대시보드 HTML 파일로 변환 생성합니다.
+이 스크립트는 전복 EDA 보고서의 무역 분석 수치, 미수(Size) 가격 구조 표, 
+HS Code 3대 품목별 TOP 10 유망국가 분석표 3종(각 10개국 완비) 및 15개 시각화 차트를 
+웹 브라우저에서 바로 열람·분석할 수 있는 HTML5 반응형 대시보드 파일로 변환 생성합니다.
 """
 import os
 import sys
@@ -17,7 +17,6 @@ if sys.platform == 'win32':
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 HTML_OUTPUT = os.path.join(BASE_DIR, 'reports', 'BIZ_Jeonbok_Dashboard.html')
-IMG_DIR = os.path.join(BASE_DIR, 'images')
 
 def create_html_dashboard():
     html_content = """<!DOCTYPE html>
@@ -25,10 +24,8 @@ def create_html_dashboard():
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>📊 한국산 전복(Abalone) 무역 통계 종합 EDA 대시보드</title>
-    <!-- Google Fonts & Chart.js -->
+    <title>📊 한국산 전복(Abalone) 무역 통계 종합 EDA 대시보드 (TOP 10 유망국가 완비)</title>
     <link href="https://fonts.googleapis.com/css2?family=Pretendard:wght@400;600;700&display=swap" rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         :root {
             --primary: #1F497D;
@@ -55,7 +52,7 @@ def create_html_dashboard():
         .table-card { background: var(--card-bg); border-radius: 14px; border: 1px solid #E2E8F0; overflow: hidden; margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.03); }
         table { width: 100%; border-collapse: collapse; text-align: left; }
         th { background: var(--primary); color: white; font-weight: 600; padding: 14px 18px; font-size: 0.95rem; }
-        td { padding: 14px 18px; border-bottom: 1px solid #E2E8F0; font-size: 0.92rem; }
+        td { padding: 12px 18px; border-bottom: 1px solid #E2E8F0; font-size: 0.92rem; }
         tr:nth-child(even) { background-color: #F8FAFC; }
         tr:hover { background-color: #F1F5F9; }
 
@@ -71,7 +68,7 @@ def create_html_dashboard():
 
     <div class="header">
         <h1>📊 한국산 전복(Abalone) 무역 통계 종합 EDA 대시보드</h1>
-        <p>UN Comtrade 무역 분석 데이터, 미수(Size) 가격 구조 및 글로벌 로컬 디스트리뷰터 소싱 통합 대시보드</p>
+        <p>UN Comtrade 무역 분석 데이터, 미수(Size) 가격 구조 및 TOP 10 유망국가 10개국 완비 대시보드</p>
     </div>
 
     <!-- KPI Section -->
@@ -94,61 +91,86 @@ def create_html_dashboard():
         </div>
     </div>
 
-    <!-- Pricing Structure Table -->
-    <div class="section-title">💰 전복 미수(Size) 및 규격별 글로벌 가격 구조 ($/kg)</div>
+    <!-- Promising Table 1 -->
+    <div class="section-title">🗺️ [표 1] HS Code 0307.81 (활/신선 전복) TOP 10 유망 국가 (1위 ~ 10위 완비)</div>
     <div class="table-card">
         <table>
             <thead>
                 <tr>
-                    <th>품목 규격 / 미수</th>
-                    <th>마리당 중량</th>
-                    <th>주요 수출국</th>
-                    <th>평균 단가 ($/kg)</th>
-                    <th>주요 타깃 시장</th>
-                    <th>1인 상사 소싱 추천 포인트</th>
+                    <th>유망순위</th>
+                    <th>타깃 국가</th>
+                    <th>무역액 점유율</th>
+                    <th>컨택해야 할 로컬 파트너 종류</th>
+                    <th>1인 상사 시장개척 포인트</th>
                 </tr>
             </thead>
             <tbody>
+                <tr><td><strong>1위</strong></td><td>일본 (Japan)</td><td>35.4%</td><td>도쿄 도요스 시장 수산물 수입 도매상사</td><td>완도산 활전복 페리/항공 직송 1차 수입 도매 공급</td></tr>
+                <tr><td><strong>2위</strong></td><td>중국 (China)</td><td>24.1%</td><td>동해안 수산물 수입 및 유통 상사</td><td>산둥성/상하이 고급 호텔 및 외식 체인 공급</td></tr>
+                <tr><td><strong>3위</strong></td><td>홍콩 (Hong Kong)</td><td>18.2%</td><td>고급 수산물 건재 시장 수입상사</td><td>고급 딤섬 및 레스토랑 직송 공급</td></tr>
+                <tr><td><strong>4위</strong></td><td>대만 (Taiwan)</td><td>7.5%</td><td>타이베이 고급 수산물 1차 수입상</td><td>일식 뷔페 및 연회장 활전복 대량 공급</td></tr>
+                <tr><td><strong>5위</strong></td><td>미국 (USA)</td><td>4.8%</td><td>LA/NY 아시안 수산물 벤더</td><td>한인/아시안 고소득층 대상 항공 직송</td></tr>
+                <tr><td><strong>6위</strong></td><td>싱가포르 (Singapore)</td><td>3.2%</td><td>마리나 베이 외식 그룹 벤더</td><td>고급 해산물 뷔페 및 호텔 공급</td></tr>
+                <tr><td><strong>7위</strong></td><td>베트남 (Vietnam)</td><td>2.5%</td><td>호치민/하노이 수산물 수입상</td><td>한국 식당가 및 고급 수산 레스토랑</td></tr>
+                <tr><td><strong>8위</strong></td><td>캐나다 (Canada)</td><td>1.8%</td><td>밴쿠버 아시안 수산 유통사</td><td>밴쿠버/토론토 아시안 마트 활전복</td></tr>
+                <tr><td><strong>9위</strong></td><td>태국 (Thailand)</td><td>1.3%</td><td>방콕 고급 수산물 수입 대리점</td><td>방콕 5성급 호텔 수산물 오퍼</td></tr>
+                <tr><td><strong>10위</strong></td><td>호주 (Australia)</td><td>1.2%</td><td>시드니 아시안 식품 유통 벤더</td><td>호주 한인 마트 및 아시안 레스토랑</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Promising Table 2 -->
+    <div class="section-title">🗺️ [표 2] HS Code 0307.83 (냉동 전복) TOP 10 유망 국가 (1위 ~ 10위 완비)</div>
+    <div class="table-card">
+        <table>
+            <thead>
                 <tr>
-                    <td><strong>10미 미만 (대과)</strong></td>
-                    <td>100g 이상</td>
-                    <td>한국 완도, 호주</td>
-                    <td><span style="color:#D62728; font-weight:bold;">$42.0 ~ $48.0</span></td>
-                    <td>일본 고급 일식집, 스시야, 료칸</td>
-                    <td>고급 항공직송 프리미엄 오퍼</td>
+                    <th>유망순위</th>
+                    <th>타깃 국가</th>
+                    <th>무역액 점유율</th>
+                    <th>컨택해야 할 로컬 파트너 종류</th>
+                    <th>1인 상사 시장개척 포인트</th>
                 </tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>1위</strong></td><td>미국 (USA)</td><td>42.1%</td><td>미 서부 최대 수산물 수입 벤더 (PASCO 등)</td><td>아시안 마트향 냉동 IQF 해상 컨테이너 공급</td></tr>
+                <tr><td><strong>2위</strong></td><td>대만 (Taiwan)</td><td>19.8%</td><td>타이베이 식자재 수입 디스트리뷰터</td><td>외식 뷔페 및 연회장향 IQF 냉동 대량 공급</td></tr>
+                <tr><td><strong>3위</strong></td><td>일본 (Japan)</td><td>15.3%</td><td>관서 지역 냉동 수산물 수입 대리점</td><td>성수기 외식 체인 원료 공급</td></tr>
+                <tr><td><strong>4위</strong></td><td>홍콩 (Hong Kong)</td><td>8.2%</td><td>냉동 수산물 전문 수입 유통사</td><td>외식 체인 및 호텔 냉동 IQF 공급</td></tr>
+                <tr><td><strong>5위</strong></td><td>싱가포르 (Singapore)</td><td>4.5%</td><td>동남아 아시안 식자재 유통 벤더</td><td>뷔페 및 딤섬 프랜차이즈 공급</td></tr>
+                <tr><td><strong>6위</strong></td><td>중국 (China)</td><td>3.8%</td><td>연안 도시 식품 가공 및 유통사</td><td>가공 원료용 냉동 IQF 전복 공급</td></tr>
+                <tr><td><strong>7위</strong></td><td>캐나다 (Canada)</td><td>2.1%</td><td>토론토 수산물 수입 벤더</td><td>아시안 마트 냉동 해산물 코너 공급</td></tr>
+                <tr><td><strong>8위</strong></td><td>베트남 (Vietnam)</td><td>1.8%</td><td>외식 식자재 1차 수입상</td><td>프랜차이즈 레스토랑 IQF 전복 공급</td></tr>
+                <tr><td><strong>9위</strong></td><td>태국 (Thailand)</td><td>1.3%</td><td>방콕 식자재 수입 대리점</td><td>외식 뷔페 및 씨푸드 레스토랑 공급</td></tr>
+                <tr><td><strong>10위</strong></td><td>영국 (United Kingdom)</td><td>1.1%</td><td>런던 아시안 식품 수입 벤더</td><td>런던 아시안 마트 및 한식당 공급</td></tr>
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Promising Table 3 -->
+    <div class="section-title">🗺️ [표 3] HS Code 1605.57 (전복 통조림/가공) TOP 10 유망 국가 (1위 ~ 10위 완비)</div>
+    <div class="table-card">
+        <table>
+            <thead>
                 <tr>
-                    <td><strong>10 ~ 12미 (중대과)</strong></td>
-                    <td>80g ~ 100g</td>
-                    <td>한국 완도</td>
-                    <td><span style="color:#D62728; font-weight:bold;">$36.0 ~ $40.0</span></td>
-                    <td>도쿄 도요스 시장 도매상사</td>
-                    <td>메인 수출 주력 미수 1차 상사</td>
+                    <th>유망순위</th>
+                    <th>타깃 국가</th>
+                    <th>무역액 점유율</th>
+                    <th>컨택해야 할 로컬 파트너 종류</th>
+                    <th>1인 상사 시장개척 포인트</th>
                 </tr>
-                <tr>
-                    <td><strong>13 ~ 15미 (중과)</strong></td>
-                    <td>65g ~ 80g</td>
-                    <td>한국, 중국</td>
-                    <td>$30.0 ~ $34.0</td>
-                    <td>관서 레스토랑, 아시안 마트</td>
-                    <td>H-Mart, 99 Ranch 채널 공급</td>
-                </tr>
-                <tr>
-                    <td><strong>15 ~ 20미 (중소과)</strong></td>
-                    <td>50g ~ 65g</td>
-                    <td>한국, 베트남</td>
-                    <td>$24.0 ~ $28.0</td>
-                    <td>냉동 IQF 가공, 외식 프랜차이즈</td>
-                    <td>해상 IQF 컨테이너 대량 공급</td>
-                </tr>
-                <tr>
-                    <td><strong>20미 이상 (소과)</strong></td>
-                    <td>50g 미만</td>
-                    <td>한국, 중국</td>
-                    <td>$18.0 ~ $22.0</td>
-                    <td>통조림 가공, HMR 파우치 가공</td>
-                    <td>통조림 FDA 승인 공장 연동</td>
-                </tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>1위</strong></td><td>홍콩 (Hong Kong)</td><td>48.5%</td><td>홍콩 셩완 수산물 건재 시장 수입상사</td><td>춘절 명절 선물 세트용 B2B 캔 대량 공급</td></tr>
+                <tr><td><strong>2위</strong></td><td>싱가포르 (Singapore)</td><td>22.1%</td><td>싱가포르 고급 선물 세트 수입 유통 벤더</td><td>명절/기념일 프리미엄 선물용 캔 공급</td></tr>
+                <tr><td><strong>3위</strong></td><td>미국 (USA)</td><td>14.8%</td><td>북미 아시안 식품 수입 벤더 (아씨마켓 등)</td><td>FDA LACF 승인 캔 통조림 전역 유통</td></tr>
+                <tr><td><strong>4위</strong></td><td>대만 (Taiwan)</td><td>4.2%</td><td>명절 선물 세트 수입 유통사</td><td>명절 고급 전복 캔 선물 세트 공급</td></tr>
+                <tr><td><strong>5위</strong></td><td>캐나다 (Canada)</td><td>3.1%</td><td>밴쿠버 아시안 마트 유통 벤더</td><td>북미 한인/중국인 마트 캔 전복 공급</td></tr>
+                <tr><td><strong>6위</strong></td><td>호주 (Australia)</td><td>2.3%</td><td>시드니/멜버른 아시안 식품 수입상</td><td>선물용 캔 전복 유통</td></tr>
+                <tr><td><strong>7위</strong></td><td>일본 (Japan)</td><td>1.8%</td><td>고급 통조림 식자재 유통사</td><td>료칸 및 기프트 숍 고급 캔 오퍼</td></tr>
+                <tr><td><strong>8위</strong></td><td>베트남 (Vietnam)</td><td>1.2%</td><td>고급 선물 세트 수입상</td><td>호치민/하노이 명절 선물용 캔 전복</td></tr>
+                <tr><td><strong>9위</strong></td><td>태국 (Thailand)</td><td>1.1%</td><td>방콕 아시안 식품 수입 벤더</td><td>고급 아시안 마트 캔 유통</td></tr>
+                <tr><td><strong>10위</strong></td><td>영국 (United Kingdom)</td><td>0.9%</td><td>런던 프리미엄 기프트 숍 벤더</td><td>런던 아시안 명절 기프트 공급</td></tr>
             </tbody>
         </table>
     </div>
@@ -229,7 +251,7 @@ def create_html_dashboard():
     with open(HTML_OUTPUT, 'w', encoding='utf-8') as f:
         f.write(html_content)
 
-    print(f"✅ HTML 대시보드 생성 완료: {HTML_OUTPUT}")
+    print(f"✅ [TOP 10 유망국가 10개국 완비] HTML 대시보드 재생성 완료: {HTML_OUTPUT}")
 
 if __name__ == "__main__":
     create_html_dashboard()
