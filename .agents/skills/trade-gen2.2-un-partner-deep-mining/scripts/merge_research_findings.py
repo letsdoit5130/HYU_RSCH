@@ -222,6 +222,8 @@ def merge(findings_path, output_dir, item, item_slug=None):
 
     data_dir = os.path.join(output_dir, 'data')
     reports_dir = os.path.join(output_dir, 'reports')
+    os.makedirs(data_dir, exist_ok=True)
+    os.makedirs(reports_dir, exist_ok=True)
     excel_path = os.path.join(data_dir, f'{slug}_buyers_leads.xlsx')
     md_report_path = os.path.join(reports_dir, f'{clean_item}_Buyers_Lead_List.md')
 
