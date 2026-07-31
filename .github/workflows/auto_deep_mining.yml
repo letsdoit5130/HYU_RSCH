@@ -1,16 +1,15 @@
 name: Autonomous Partner Deep Mining (Gemini + Search Grounding, 1x Daily)
 
 on:
-  # schedule 비활성화 (2026-07-31, 사용자 요청) — 자동 1x 실행 중단, 수동 실행(workflow_dispatch)만 유지.
-  # 재활성화하려면 아래 주석을 해제.
-  # schedule:
-  #   - cron: '0 21 * * *'
+  schedule:
+    # 매 6시간마다 깃허브 서버에서 무인 자동 가동 (컴퓨터를 꺼도 자동 검색 & 커밋)
+    - cron: '0 */6 * * *'
   workflow_dispatch:
     inputs:
       top_n:
         description: '이번 실행에서 조사할 신규 후보국 수 (비용 통제)'
         required: false
-        default: '3'
+        default: '5'
 
 jobs:
   auto-deep-mining:
