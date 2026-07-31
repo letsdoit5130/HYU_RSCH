@@ -1,0 +1,73 @@
+name: Autonomous Partner Deep Mining (Gemini + Search Grounding, 1x Daily)
+
+on:
+  schedule:
+    # 하루 1회 무인 자동 실행 (KST 06:00 = UTC 21:00). API 종량 과금이라 4x cron보다 낮은 빈도.
+    - cron: '0 21 * * *'
+  workflow_dispatch:
+    inputs:
+      top_n:
+        description: '이번 실행에서 조사할 신규 후보국 수 (비용 통제)'
+        required: false
+        default: '3'
+
+jobs:
+  auto-deep-mining:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install uv and dependencies
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          export PATH="$HOME/.local/bin:$PATH"
+          uv pip install --system pandas openpyxl tabulate google-genai
+
+      - name: Run Autonomous Deep Mining (Abalone)
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python .agents/skills/trade-gen4-un-auto-mining/scripts/autonomous_deep_mining.py \
+            --item "Abalone" \
+            --output_dir BIZ-Jeonbok \
+            --item_slug abalone \
+            --top_n ${{ github.event.inputs.top_n || 3 }}
+
+      - name: Auto Commit and Push Updated Verified Partners
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action Bot"
+
+          TARGET_FILES="BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md BIZ-Jeonbok/data/abalone_buyers_leads.xlsx BIZ-Jeonbok/data/abalone_auto_mining_log.jsonl"
+
+          if [ -z "$(git status --porcelain -- $TARGET_FILES)" ]; then
+            echo "변경 사항 없음 — 커밋 생략"
+            exit 0
+          fi
+
+          git add $TARGET_FILES
+          git commit -m "Automated autonomous deep mining update (Gemini) [skip ci]" || { echo "커밋할 변경 사항 없음"; exit 0; }
+
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "푸시 성공 (시도 $attempt)"
+              exit 0
+            fi
+            echo "푸시 실패 (시도 $attempt), 원격 변경사항 반영 후 재시도..."
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}" || { echo "리베이스 실패"; exit 1; }
+          done
+
+          echo "3회 재시도 후에도 푸시 실패 — 브랜치 보호 규칙 또는 토큰 권한을 확인하세요."
+          exit 1

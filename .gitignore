@@ -68,6 +68,8 @@ yes24/docs/v2_slides_png/
 !.agents/skills/trade-gen2.2-un-partner-deep-mining/**
 !.agents/skills/trade-gen3-un-partner-pipeline/
 !.agents/skills/trade-gen3-un-partner-pipeline/**
+!.agents/skills/trade-gen4-un-auto-mining/
+!.agents/skills/trade-gen4-un-auto-mining/**
 
 # iherb 데이터 제외
 iherb/data/
