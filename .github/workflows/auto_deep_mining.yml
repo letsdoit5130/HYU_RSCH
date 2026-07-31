@@ -7,9 +7,9 @@ on:
   workflow_dispatch:
     inputs:
       top_n:
-        description: '이번 실행에서 조사할 신규 후보국 수 (비용 통제)'
+        description: '이번 실행에서 조사할 신규 후보국 및 시장 수 (목표: 최대 10,000개 수집)'
         required: false
-        default: '5'
+        default: '10000'
 
 jobs:
   auto-deep-mining:
@@ -44,7 +44,7 @@ jobs:
             --item "Abalone" \
             --output_dir BIZ-Jeonbok \
             --item_slug abalone \
-            --top_n ${{ github.event.inputs.top_n || 3 }}
+            --top_n ${{ github.event.inputs.top_n || 10000 }}
 
       - name: Auto Commit and Push Updated Verified Partners
         run: |
