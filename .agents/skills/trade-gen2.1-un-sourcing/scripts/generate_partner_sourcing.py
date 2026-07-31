@@ -298,7 +298,14 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
         else df_new_history
     )
 
-    with pd.ExcelWriter(excel_path, engine='openpyxl') as writer:
+    # 기존 파일에 partner-deep-mining이 추가한 'Verified_Partners' 등 다른 시트가 있으면
+    # 그대로 보존해야 한다. mode='w'(기본값)는 파일을 통째로 새로 쓰기 때문에 이 스크립트가
+    # 다루지 않는 시트를 매번 조용히 삭제해버린다 — mode='a' + if_sheet_exists='replace'로
+    # 우리가 쓰는 두 시트만 갱신하고 나머지는 그대로 둔다.
+    writer_kwargs = {'engine': 'openpyxl'}
+    if os.path.exists(excel_path):
+        writer_kwargs.update(mode='a', if_sheet_exists='replace')
+    with pd.ExcelWriter(excel_path, **writer_kwargs) as writer:
         df_combined_leads.to_excel(writer, sheet_name='Sourcing_Candidates', index=False)
         df_combined_history.to_excel(writer, sheet_name='Sourcing_History', index=False)
 
@@ -306,6 +313,22 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
 
     status_counts = df_combined_leads['조사 상태'].value_counts()
     status_md = status_counts.to_frame(name='국가 수').to_markdown()
+
+    # partner-deep-mining이 채워 넣은 'Verified_Partners' 시트가 있으면 리포트에도 반영한다.
+    # 이 스크립트가 마지막에 리포트를 다시 쓸 때 그 섹션이 통째로 사라지는 것을 방지한다.
+    try:
+        df_verified_partners = pd.read_excel(excel_path, sheet_name='Verified_Partners')
+    except Exception:
+        df_verified_partners = pd.DataFrame()
+
+    verified_partners_section = ""
+    if not df_verified_partners.empty:
+        verified_partners_section = f"""---
+
+## 🔍 검증된 파트너/에이전트 목록 (출처 URL 포함)
+
+{df_verified_partners.to_markdown(index=False)}
+"""
 
     md_content = f"""# 🌐 한국산 {clean_item} 소싱 후보국가 & 파트너 리서치 트래커
 
@@ -328,7 +351,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
 ## 📊 2. 조사 상태별 현황
 
 {status_md}
-
+{verified_partners_section}
 ---
 
 ## 📋 3. 소싱 후보국가 리스트 (우선순위 점수 순)

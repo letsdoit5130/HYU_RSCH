@@ -20,6 +20,7 @@ import os
 import sys
 import re
 import json
+import time
 import argparse
 import datetime
 import subprocess
@@ -107,7 +108,23 @@ def call_gemini(prompt, model="gemini-2.5-flash"):
         temperature=0.0,
     )
 
-    response = client.models.generate_content(model=model, contents=prompt, config=config)
+    # Gemini 서버가 일시적으로 과부하 상태(503 UNAVAILABLE)일 때가 있어, 짧게 재시도한다.
+    last_error = None
+    for attempt in range(3):
+        try:
+            response = client.models.generate_content(model=model, contents=prompt, config=config)
+            break
+        except Exception as e:
+            last_error = e
+            is_transient = '503' in str(e) or 'UNAVAILABLE' in str(e) or '429' in str(e)
+            if not is_transient or attempt == 2:
+                raise
+            wait_s = 2 ** (attempt + 1)
+            print(f"   ⏳ 일시적 오류({e}), {wait_s}초 후 재시도 ({attempt + 1}/3)...")
+            time.sleep(wait_s)
+    else:
+        raise last_error
+
     text = response.text or ""
 
     grounded_urls = []
