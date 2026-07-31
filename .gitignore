@@ -60,6 +60,14 @@ yes24/docs/v2_slides_png/
 !.agents/skills/marp-skills/**
 !.agents/skills/data-pipeline-framework/
 !.agents/skills/data-pipeline-framework/**
+!.agents/skills/trade-eda-generator/
+!.agents/skills/trade-eda-generator/**
+!.agents/skills/partner-sourcing-generator/
+!.agents/skills/partner-sourcing-generator/**
+!.agents/skills/partner-deep-mining/
+!.agents/skills/partner-deep-mining/**
+!.agents/skills/trade-partner-pipeline/
+!.agents/skills/trade-partner-pipeline/**
 
 # iherb 데이터 제외
 iherb/data/

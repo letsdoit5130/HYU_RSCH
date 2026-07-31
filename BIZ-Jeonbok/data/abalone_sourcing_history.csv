@@ -1,2 +1,2 @@
-﻿수집 구동 시기 (Execution Timestamp),조사 대상 국가 (Target Countries),우선순위 모드 (Priority Mode),시점별 국가별 신규 수집 내역 (Execution Breakdown),신규 추가 수 (New Added),누적 총 기업 수 (Total Accumulated),상태 (Status)
-2026-07-29 19:15:43,"Japan, United States, Hong Kong, China, Taiwan, Singapore, Canada, Vietnam, Thailand, Australia",표1~3 전체 전복 유망 국가 순차 소싱,"Japan: +5개, United States: +2개, Hong Kong: +1개",+8개사,8개사,정상 완료 (Success)
+﻿수집 구동 시기 (Execution Timestamp),참조 HS Code 표 수,이번 실행 발견 국가 수,신규 후보국 수 (New),누적 총 후보국 수 (Total Accumulated),상태 (Status)
+2026-07-31 13:55:51,4,22,22,22,정상 완료 (Success)

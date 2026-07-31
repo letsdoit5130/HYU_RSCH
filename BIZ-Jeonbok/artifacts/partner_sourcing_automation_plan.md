@@ -1,5 +1,11 @@
 # 🚀 글로벌 수산물 파트너/에이전트 수집 무인 자동화 구축 실행 계획서 (Implementation Plan)
 
+> ⚠️ **[2026-07-31 갱신 안내]** 이 문서(2026-07-29 작성)가 설명하는 "3중 딥 마이닝" 구현은 실제로는
+> 하드코딩된 가짜 업체 데이터를 "실존 검증 완료"로 표시하던 버전이었습니다. 해당 스크립트는 제거됐고,
+> 실제 WebSearch/WebFetch 기반으로 재구현한 버전은
+> [partner_deep_mining_implementation_plan.md](./partner_deep_mining_implementation_plan.md)를
+> 참고하세요. 이 문서는 과거 기록으로만 남겨둡니다.
+
 - **최종 업데이트 일시**: 2026년 07월 29일
 - **프로젝트 명**: BIZ-Jeonbok 글로벌 바이어 & 독립 에이전트 소싱 파이프라인
 - **실행 주체**: BIZ-Jeonbok Partner Sourcing Agent & GitHub Actions Engine
@@ -58,7 +64,7 @@
 
 ## 📁 4. 파이프라인 관리 파일 전체 목록
 
-- **소싱 에이전트 엔진 (Docstring 완비)**: [BIZ-Jeonbok/src/partner_sourcing_agent.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/src/partner_sourcing_agent.py)
+- **소싱 에이전트 엔진 (Docstring 완비)**: [.agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py) (2026-07-31: 전역 스킬로 이전, 하드코딩 가상 업체 데이터 제거)
 - **GitHub Actions 워크플로우 (일 4회 매일 실행)**: [.github/workflows/partner_sourcing.yml](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.github/workflows/partner_sourcing.yml)
 - **마크다운 수집 리포트 및 히스토리 표**: [BIZ-Jeonbok/reports/Buyers_Lead_List.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/reports/Buyers_Lead_List.md)
 - **CSV 히스토리 트래킹 파일**: [BIZ-Jeonbok/data/sourcing_history.csv](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/data/sourcing_history.csv)

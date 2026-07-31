@@ -4,19 +4,23 @@ on:
   schedule:
     # 매일 4회 무인 자동 실행 (KST 06:00, 12:00, 18:00, 00:00 = UTC 21:00, 03:00, 09:00, 15:00)
     - cron: '0 3,9,15,21 * * *'
-  workflow_dispatch:
-    inputs:
-      target_country:
-        description: '조사 대상 타깃 국가 (예: Japan, United States, Hong Kong, 전체)'
-        required: true
-        default: '전체'
+  workflow_dispatch: {}
+
+env:
+  PYTHONIOENCODING: "utf-8"
 
 jobs:
   abalone-sourcing-4x-daily:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          # 자동 커밋/푸시를 위해 detached HEAD가 아닌 실제 브랜치로 체크아웃
+          ref: ${{ github.ref_name }}
 
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -29,14 +33,40 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           uv pip install --system pandas openpyxl tabulate
 
-      - name: Run Abalone Partner Sourcing Agent
+      - name: Run Partner Sourcing Generator (Abalone)
         run: |
-          python BIZ-Jeonbok/src/partner_sourcing_agent.py --priority all
+          python .agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py \
+            --item "Abalone" \
+            --output_dir BIZ-Jeonbok \
+            --item_slug abalone \
+            --eda_report BIZ-Jeonbok/reports/BIZ-전복_Gathered_EDA_Report.md
 
       - name: Auto Commit and Push Updated Abalone Leads
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
-          git add BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md BIZ-Jeonbok/data/abalone_buyers_leads.xlsx BIZ-Jeonbok/data/abalone_sourcing_history.csv BIZ-Jeonbok/ARTIFACTS/Abalone_Buyers_Lead_List.md
-          git commit -m "Automated 4x Daily Abalone Lead Update [skip ci]" || exit 0
-          git push
+
+          TARGET_FILES="BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md BIZ-Jeonbok/data/abalone_buyers_leads.xlsx BIZ-Jeonbok/data/abalone_sourcing_history.csv"
+
+          # 커밋 대상 변경이 없으면 조용히 종료 (실행 실패로 취급하지 않음)
+          if [ -z "$(git status --porcelain -- $TARGET_FILES)" ]; then
+            echo "변경 사항 없음 — 커밋 생략"
+            exit 0
+          fi
+
+          git add $TARGET_FILES
+          git commit -m "Automated 4x Daily Abalone Sourcing Candidate Update [skip ci]" || { echo "커밋할 변경 사항 없음"; exit 0; }
+
+          # 동시 실행/원격 변경으로 인한 non-fast-forward를 대비해 재시도
+          for attempt in 1 2 3; do
+            if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+              echo "푸시 성공 (시도 $attempt)"
+              exit 0
+            fi
+            echo "푸시 실패 (시도 $attempt), 원격 변경사항 반영 후 재시도..."
+            git fetch origin "${GITHUB_REF_NAME}"
+            git rebase "origin/${GITHUB_REF_NAME}" || { echo "리베이스 실패"; exit 1; }
+          done
+
+          echo "3회 재시도 후에도 푸시 실패 — 브랜치 보호 규칙 또는 토큰 권한을 확인하세요."
+          exit 1
