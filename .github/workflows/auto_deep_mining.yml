@@ -36,7 +36,9 @@ jobs:
 
       - name: Run Autonomous Deep Mining (Abalone)
         env:
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          # 저장소 Secret 이름은 HAEYU_RESEARCH로 등록돼 있음 (Gemini API 키 값).
+          # 스크립트 내부에서는 GEMINI_API_KEY 환경변수명을 그대로 사용하므로 여기서 매핑한다.
+          GEMINI_API_KEY: ${{ secrets.HAEYU_RESEARCH }}
         run: |
           python .agents/skills/trade-gen4-un-auto-mining/scripts/autonomous_deep_mining.py \
             --item "Abalone" \

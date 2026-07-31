@@ -12,15 +12,20 @@ GitHub Actions에서 Gemini API를 직접 호출해, 사람 개입·컴퓨터 �
 
 ---
 
-## ⚠️ 시작 전 필수 설정 — `GEMINI_API_KEY`
+## ⚠️ 시작 전 필수 설정 — Gemini API 키 Secret
 
 이 스킬은 **API 키 없이는 작동하지 않습니다** (당연히, 아무도 몰래 대신 검색해주지 않습니다).
 
 1. https://aistudio.google.com/apikey 에서 Gemini API 키 발급
 2. GitHub 저장소 → **Settings → Secrets and variables → Actions → New repository secret**
-3. Name: `GEMINI_API_KEY`, Value: 발급받은 키 → **Add secret**
+   (⚠️ Codespaces/Dependabot secrets가 아니라 **Actions** 탭이어야 하고, "Environments"가 아니라
+   **"Repository secrets"**여야 워크플로우가 `environment:` 지정 없이도 읽을 수 있다)
+3. 이름은 자유롭게 지어도 된다 — **이 저장소는 `HAEYU_RESEARCH`라는 이름으로 등록돼 있고**,
+   `.github/workflows/auto_deep_mining.yml`이 `GEMINI_API_KEY: ${{ secrets.HAEYU_RESEARCH }}`로
+   매핑해 스크립트 내부의 `GEMINI_API_KEY` 환경변수명에 연결한다. 다른 이름으로 등록했다면 이
+   워크플로우 파일의 `secrets.HAEYU_RESEARCH` 부분만 그 이름으로 바꾸면 된다.
 
-이 secret이 없으면 워크플로우가 `[ERROR]: GEMINI_API_KEY 환경변수` 메시지와 함께 즉시
+이 secret이 없거나 이름이 안 맞으면 워크플로우가 `[ERROR]: GEMINI_API_KEY 환경변수` 메시지와 함께 즉시
 실패합니다(크래시가 아니라 명확한 에러 — 계속 실패해도 원인을 바로 알 수 있음).
 
 ---
