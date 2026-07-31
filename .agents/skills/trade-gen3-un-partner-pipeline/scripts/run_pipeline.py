@@ -1,10 +1,10 @@
 """
-trade-eda-generator → partner-sourcing-generator를 한 번의 명령으로 순차 실행하는 오케스트레이터.
+trade-gen1-un-eda → trade-gen2.1-un-sourcing를 한 번의 명령으로 순차 실행하는 오케스트레이터.
 
 두 스크립트 모두 결정적(deterministic) pandas 스크립트이므로 이 래퍼는 그냥 순서대로
 subprocess로 호출할 뿐, 판단이나 웹 검색은 하지 않는다.
 
-주의: 3단계(partner-deep-mining, 실제 웹 검색으로 파트너 찾기)는 여기 포함되지 않는다.
+주의: 3단계(trade-gen2.2-un-partner-deep-mining, 실제 웹 검색으로 파트너 찾기)는 여기 포함되지 않는다.
 그건 AI가 WebSearch/WebFetch로 직접 수행해야 하는 작업이라 단일 CLI 명령으로 만들 수 없다
 (정직하게 못 되는 걸 되는 척 자동화하지 않는다). 이 스크립트 실행 후 사용자가 자연어로
 "파트너 리서치도 해줘" 라고 요청하면 그때 AI 에이전트가 3단계를 이어서 수행한다.
@@ -22,8 +22,8 @@ if sys.platform == 'win32':
         pass
 
 SKILLS_DIR = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-EDA_SCRIPT = os.path.join(SKILLS_DIR, 'trade-eda-generator', 'scripts', 'generate_trade_eda.py')
-SOURCING_SCRIPT = os.path.join(SKILLS_DIR, 'partner-sourcing-generator', 'scripts', 'generate_partner_sourcing.py')
+EDA_SCRIPT = os.path.join(SKILLS_DIR, 'trade-gen1-un-eda', 'scripts', 'generate_trade_eda.py')
+SOURCING_SCRIPT = os.path.join(SKILLS_DIR, 'trade-gen2.1-un-sourcing', 'scripts', 'generate_partner_sourcing.py')
 
 
 def run_step(label, cmd):
@@ -39,7 +39,7 @@ def run_step(label, cmd):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="trade-eda-generator + partner-sourcing-generator 원샷 실행"
+        description="trade-gen1-un-eda + trade-gen2.1-un-sourcing 원샷 실행"
     )
     parser.add_argument("--input", required=True, help="무역 통계 CSV 경로")
     parser.add_argument("--item", required=True, help="품목명 (예: '전복 (Abalone)')")
@@ -47,7 +47,7 @@ def main():
     parser.add_argument("--item_slug", default=None, help="데이터 파일명 슬러그 (생략 시 자동 생성)")
     args = parser.parse_args()
 
-    for path, label in [(EDA_SCRIPT, "trade-eda-generator"), (SOURCING_SCRIPT, "partner-sourcing-generator")]:
+    for path, label in [(EDA_SCRIPT, "trade-gen1-un-eda"), (SOURCING_SCRIPT, "trade-gen2.1-un-sourcing")]:
         if not os.path.exists(path):
             print(f"[ERROR]: Required file not found")
             print(f"- Missing: {path}")
@@ -56,12 +56,12 @@ def main():
             sys.exit(1)
 
     eda_cmd = [sys.executable, EDA_SCRIPT, "--input", args.input, "--item", args.item, "--output_dir", args.output_dir]
-    run_step("1/2 trade-eda-generator (EDA 리포트 + 15개 차트 생성)", eda_cmd)
+    run_step("1/2 trade-gen1-un-eda (EDA 리포트 + 15개 차트 생성)", eda_cmd)
 
     sourcing_cmd = [sys.executable, SOURCING_SCRIPT, "--item", args.item, "--output_dir", args.output_dir]
     if args.item_slug:
         sourcing_cmd += ["--item_slug", args.item_slug]
-    run_step("2/2 partner-sourcing-generator (소싱 후보국가 우선순위 산출)", sourcing_cmd)
+    run_step("2/2 trade-gen2.1-un-sourcing (소싱 후보국가 우선순위 산출)", sourcing_cmd)
 
     clean_item = args.item.split('(')[0].strip() if '(' in args.item else args.item.strip()
     print("=" * 60)

@@ -8,7 +8,7 @@
 
 ## 🎯 1. 완수된 항목 체크리스트
 
-- [x] `.agents/skills/partner-deep-mining/` 스킬 신설 (SKILL.md + `merge_research_findings.py`)
+- [x] `.agents/skills/trade-gen2.2-un-partner-deep-mining/` 스킬 신설 (SKILL.md + `merge_research_findings.py`)
 - [x] 출처 URL 없는 findings 자동 거부 — 실제 테스트로 확인
 - [x] `Verified_Partners` 시트에 **City / Country 컬럼**을 "본사 위치" 왼쪽에 분리 신설 (영문 전용)
 - [x] "온디맨드 딥마이닝"과 "4x cron 자동화"를 별도 실행으로 분리, 같은 시트에 누적되도록 구현
@@ -67,8 +67,8 @@
 
 - [BIZ-Jeonbok/data/abalone_buyers_leads.xlsx](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/data/abalone_buyers_leads.xlsx) — `Sourcing_Candidates` · `Verified_Partners` · `Sourcing_History` 3개 시트
 - [BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md)
-- [.agents/skills/partner-deep-mining/SKILL.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-deep-mining/SKILL.md)
-- [.agents/skills/partner-deep-mining/scripts/merge_research_findings.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-deep-mining/scripts/merge_research_findings.py)
+- [.agents/skills/trade-gen2.2-un-partner-deep-mining/SKILL.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/trade-gen2.2-un-partner-deep-mining/SKILL.md)
+- [.agents/skills/trade-gen2.2-un-partner-deep-mining/scripts/merge_research_findings.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/trade-gen2.2-un-partner-deep-mining/scripts/merge_research_findings.py)
 
 ---
 

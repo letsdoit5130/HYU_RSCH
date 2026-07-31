@@ -1,11 +1,11 @@
 ---
-name: partner-sourcing-generator
-description: trade-eda-generator 스킬이 만든 EDA 리포트(TOP N HS Code별 TOP 10 유망국가 표)를 파싱해, 데이터 기반 "소싱 후보국가 & 파트너 리서치 트래커"를 자동/누적 생성하는 범용 스킬입니다. 잠재 파트너/바이어 국가 조사, 소싱 후보국 리스트, 무역 데이터 기반 파트너 우선순위 요청 시 활성화됩니다.
+name: trade-gen2.1-un-sourcing
+description: trade-gen1-un-eda 스킬이 만든 EDA 리포트(TOP N HS Code별 TOP 10 유망국가 표)를 파싱해, 데이터 기반 "소싱 후보국가 & 파트너 리서치 트래커"를 자동/누적 생성하는 범용 스킬입니다. 잠재 파트너/바이어 국가 조사, 소싱 후보국 리스트, 무역 데이터 기반 파트너 우선순위 요청 시 활성화됩니다.
 ---
 
 # 🌐 Partner Sourcing Generator (범용 소싱 후보국가 트래커 생성 스킬)
 
-`trade-eda-generator` 스킬이 만든 EDA 리포트의 TOP N HS Code x TOP 10 유망국가 표를 읽어,
+`trade-gen1-un-eda` 스킬이 만든 EDA 리포트의 TOP N HS Code x TOP 10 유망국가 표를 읽어,
 **국가별로 집계·우선순위화한 소싱 후보 리스트**를 엑셀/CSV/마크다운으로 자동 생성·누적합니다.
 
 이 스킬은 특정 품목(예: 전복)에 종속되지 않습니다. `--item`, `--output_dir`만 바꾸면
@@ -32,23 +32,23 @@ description: trade-eda-generator 스킬이 만든 EDA 리포트(TOP N HS Code별
 
 ## 🛠️ 스킬 사용법 (Usage)
 
-**사전 조건**: 먼저 `trade-eda-generator` 스킬로 해당 품목의 EDA 리포트를 생성해야 합니다.
+**사전 조건**: 먼저 `trade-gen1-un-eda` 스킬로 해당 품목의 EDA 리포트를 생성해야 합니다.
 
 ```bash
-# 1) EDA 리포트 생성 (trade-eda-generator 스킬)
-uv run python .agents/skills/trade-eda-generator/scripts/generate_trade_eda.py \
+# 1) EDA 리포트 생성 (trade-gen1-un-eda 스킬)
+uv run python .agents/skills/trade-gen1-un-eda/scripts/generate_trade_eda.py \
   --input BIZ-Jeonbok/BIZ-JB-Gathered.csv \
   --item "전복 (Abalone)" \
   --output_dir BIZ-Jeonbok
 
 # 2) 소싱 후보국가 트래커 생성/갱신 (이 스킬)
-uv run python .agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py \
+uv run python .agents/skills/trade-gen2.1-un-sourcing/scripts/generate_partner_sourcing.py \
   --item "전복 (Abalone)" \
   --output_dir BIZ-Jeonbok
 ```
 
 ### 입력 파라미터
-- `--item` (필수): 품목명 (예: `"전복 (Abalone)"`, `"김 (Laver)"`). trade-eda-generator에 넘긴 값과 동일해야 합니다.
+- `--item` (필수): 품목명 (예: `"전복 (Abalone)"`, `"김 (Laver)"`). trade-gen1-un-eda에 넘긴 값과 동일해야 합니다.
 - `--output_dir` (필수): 프로젝트 루트 폴더 (예: `BIZ-Jeonbok`). `data/`, `reports/` 하위에 결과가 저장됩니다.
 - `--eda_report` (선택): 참조할 EDA 리포트 경로. 생략 시 `{output_dir}/reports/BIZ-{품목}_Gathered_EDA_Report.md`를 자동으로 찾습니다.
 - `--item_slug` (선택): 데이터 파일명에 쓸 영문 슬러그 (예: `abalone`). 생략 시 `--item`에서 자동 생성합니다.
@@ -70,7 +70,7 @@ uv run python .agents/skills/partner-sourcing-generator/scripts/generate_partner
 
 | 구분 | 컬럼 | 설명 |
 |---|---|---|
-| EDA 데이터 기반 (재실행 시 자동 갱신) | 국가, 데이터 수집일, EDA 데이터 근거, 후보 HS Code 수, 최고 순위, 우선순위 점수 | trade-eda-generator 리포트에서 파싱한 실제 값 |
+| EDA 데이터 기반 (재실행 시 자동 갱신) | 국가, 데이터 수집일, EDA 데이터 근거, 후보 HS Code 수, 최고 순위, 우선순위 점수 | trade-gen1-un-eda 리포트에서 파싱한 실제 값 |
 | 사용자 조사 항목 (재실행해도 보존) | 조사 상태, 후보 파트너/에이전트명, 회사 이메일, 웹사이트/LinkedIn, Messenger, 본사 위치, 비고/메모 | 사람이 직접 조사해 채우는 빈 칸 |
 
 우선순위 점수는 `(해당 국가가 상위권에 등장한 HS Code 표 개수) × 100 − (최고 순위)`로 계산되어,

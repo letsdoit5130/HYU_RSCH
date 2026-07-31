@@ -1,5 +1,5 @@
 """
-trade-eda-generator 스킬이 만든 EDA 리포트(TOP N HS Code x TOP 10 유망국가 표)를 파싱해,
+trade-gen1-un-eda 스킬이 만든 EDA 리포트(TOP N HS Code x TOP 10 유망국가 표)를 파싱해,
 데이터 기반 "소싱 후보국가 & 파트너 리서치 트래커"를 자동/누적 생성하는 범용 스킬.
 
 설계 원칙 (중요):
@@ -82,7 +82,7 @@ def print_error(missing, required_by, action):
 # ---------------------------------------------------------------------------
 
 def parse_eda_report_tables(report_path):
-    """generate_trade_eda.py(trade-eda-generator 스킬)가 만든
+    """generate_trade_eda.py(trade-gen1-un-eda 스킬)가 만든
     '### 📌 [표 N] HS ... TOP 10 유망 국가 11대 명세 표' 섹션들을 파싱해
     (table_num, hs_label, rank, country, reason) 레코드 리스트로 반환한다."""
     if not os.path.exists(report_path):
@@ -260,7 +260,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
         print_error(
             eda_report,
             "generate_partner_sourcing.py",
-            "먼저 trade-eda-generator 스킬(generate_trade_eda.py)로 해당 품목의 EDA 리포트를 생성하세요.",
+            "먼저 trade-gen1-un-eda 스킬(generate_trade_eda.py)로 해당 품목의 EDA 리포트를 생성하세요.",
         )
         return None
 
@@ -269,7 +269,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
         print_error(
             f"{eda_report} 내 파싱 가능한 HS Code 유망국가 표 없음",
             "generate_partner_sourcing.py",
-            "trade-eda-generator의 최신 버전으로 리포트를 재생성했는지 확인하세요 "
+            "trade-gen1-un-eda의 최신 버전으로 리포트를 재생성했는지 확인하세요 "
             "(리포트 헤딩 형식이 '### 📌 [표 N] ... TOP 10 유망 국가' 여야 합니다).",
         )
         return None
@@ -314,7 +314,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
 - **현재 누적 후보국 수**: `{len(df_combined_leads)}개국`
 
 > ⚠️ 이 문서는 실제 웹 검색/실사를 수행하지 않습니다. "국가/EDA 데이터 근거/순위/우선순위 점수"는
-> trade-eda-generator가 산출한 실제 무역 통계 기반값이며, "후보 파트너/에이전트명·이메일·웹사이트"는
+> trade-gen1-un-eda가 산출한 실제 무역 통계 기반값이며, "후보 파트너/에이전트명·이메일·웹사이트"는
 > 사람이 직접 조사해 채워 넣어야 하는 빈 칸입니다. 재실행해도 이미 채워 넣은 조사 결과는 덮어쓰지 않습니다.
 
 ---
@@ -353,7 +353,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        description="trade-eda-generator 리포트 기반 범용 소싱 후보국가 & 파트너 리서치 트래커 생성기"
+        description="trade-gen1-un-eda 리포트 기반 범용 소싱 후보국가 & 파트너 리서치 트래커 생성기"
     )
     parser.add_argument("--item", type=str, required=True, help="품목명 (예: '전복 (Abalone)', '김 (Laver)')")
     parser.add_argument("--output_dir", type=str, required=True, help="프로젝트 루트 폴더 (data/, reports/ 하위 생성)")

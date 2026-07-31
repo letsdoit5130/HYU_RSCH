@@ -54,7 +54,7 @@
 
 - **[Implementation Plan 아티팩트]**: [BIZ-Jeonbok/ARTIFACTS/partner_sourcing_automation_plan.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/ARTIFACTS/partner_sourcing_automation_plan.md)
 - **[Walkthrough 완수 보고서]**: [BIZ-Jeonbok/ARTIFACTS/walkthrough.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/ARTIFACTS/walkthrough.md)
-- **[소싱 에이전트 코드]**: [.agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py) (2026-07-31: 전역 스킬로 이전, 하드코딩 가상 업체 데이터 제거)
+- **[소싱 에이전트 코드]**: [.agents/skills/trade-gen2.1-un-sourcing/scripts/generate_partner_sourcing.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/trade-gen2.1-un-sourcing/scripts/generate_partner_sourcing.py) (2026-07-31: 전역 스킬로 이전, 하드코딩 가상 업체 데이터 제거)
 - **[GitHub Actions 워크플로우]**: [.github/workflows/partner_sourcing.yml](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.github/workflows/partner_sourcing.yml)
 - **[마크다운 수집 리포트]**: [BIZ-Jeonbok/reports/Buyers_Lead_List.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/reports/Buyers_Lead_List.md)
 - **[CSV 히스토리 트래킹 파일]**: [BIZ-Jeonbok/data/sourcing_history.csv](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/data/sourcing_history.csv)

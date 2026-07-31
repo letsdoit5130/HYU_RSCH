@@ -1,6 +1,6 @@
 """
-partner-deep-mining 스킬의 산출물(실제 WebSearch/WebFetch로 확인한 회사/에이전트 findings JSON)을
-partner-sourcing-generator가 만든 소싱 트래커(xlsx/csv/md)에 병합하는 결정적(deterministic) 병합기.
+trade-gen2.2-un-partner-deep-mining 스킬의 산출물(실제 WebSearch/WebFetch로 확인한 회사/에이전트 findings JSON)을
+trade-gen2.1-un-sourcing가 만든 소싱 트래커(xlsx/csv/md)에 병합하는 결정적(deterministic) 병합기.
 
 역할 분리:
 - 실제 회사가 존재하는지 찾는 것(웹 검색/판단)은 이 스크립트가 하지 않는다. 그건 Claude가
@@ -228,7 +228,7 @@ def merge(findings_path, output_dir, item, item_slug=None):
     if not os.path.exists(excel_path):
         print_error(
             excel_path, "merge_research_findings.py",
-            "먼저 partner-sourcing-generator 스킬로 소싱 후보국가 트래커를 생성하세요.",
+            "먼저 trade-gen2.1-un-sourcing 스킬로 소싱 후보국가 트래커를 생성하세요.",
         )
         return None
 

@@ -2,7 +2,7 @@
 
 - **최종 업데이트 일시**: 2026년 07월 31일
 - **프로젝트 명**: BIZ-Jeonbok 글로벌 바이어 & 독립 에이전트 소싱 파이프라인 — 딥마이닝 확장
-- **실행 주체**: Claude(WebSearch/WebFetch 직접 수행) + `merge_research_findings.py`(결정적 병합기)
+- **실행 주체**: AI 에이전트(WebSearch/WebFetch 직접 수행, Claude로 최초 구현·검증) + `merge_research_findings.py`(결정적 병합기)
 
 ---
 
@@ -14,7 +14,7 @@
 코드 어디서도 호출되지 않는 죽은 코드였다.
 
 일반 Python 스크립트는 구글/LinkedIn을 실제로 검색할 수 없기 때문에, "무인 자동 딥마이닝"을
-정직하게 구현하려면 **검색과 판단은 실제 웹 접근이 가능한 에이전트(Claude)가 하고, 스크립트는
+정직하게 구현하려면 **검색과 판단은 실제 웹 접근이 가능한 AI 에이전트가 하고, 스크립트는
 그 결과를 정해진 스키마로 정확히 기록하는 역할만 해야 한다**는 것이 이번 재설계의 출발점이다.
 
 ---
@@ -22,17 +22,17 @@
 ## 🧩 2. 아키텍처 — 역할 분리
 
 ```
-[trade-eda-generator]                     실제 무역 통계 → HS Code별 TOP 10 국가 리포트
+[trade-gen1-un-eda]                             실제 무역 통계 → HS Code별 TOP 10 국가 리포트
         │
         ▼
-[partner-sourcing-generator]  (4x cron)    국가별 우선순위 점수 산출 (Sourcing_Candidates 시트)
-        │                                  ※ 실제 회사를 검색하지 않음 — 정적 스크립트라서 애초에 불가능
+[trade-gen2.1-un-sourcing]  (4x cron)           국가별 우선순위 점수 산출 (Sourcing_Candidates 시트)
+        │                                        ※ 실제 회사를 검색하지 않음 — 정적 스크립트라서 애초에 불가능
         ▼
-[partner-deep-mining]         (온디맨드)    Claude가 WebSearch/WebFetch로 실재 회사·에이전트 검색
-        │                                  → findings JSON (출처 URL 필수)
+[trade-gen2.2-un-partner-deep-mining] (온디맨드)  AI 에이전트가 WebSearch/WebFetch로 실재 회사·에이전트 검색
+        │                                        → findings JSON (출처 URL 필수)
         ▼
-[merge_research_findings.py]               findings를 Verified_Partners 시트에 결정적으로 병합
-                                            + Sourcing_Candidates의 조사 상태 갱신
+[merge_research_findings.py]                    findings를 Verified_Partners 시트에 결정적으로 병합
+                                                 + Sourcing_Candidates의 조사 상태 갱신
 ```
 
 **핵심 원칙**: "회사가 실제로 존재하는지 찾는 것"은 스크립트의 책임이 아니다. 스크립트는 오직
@@ -52,7 +52,7 @@
 
 ## 🕐 4. 실행 주기 — 온디맨드 vs 4x cron 자동화 (별도 실행, 결과는 같은 시트)
 
-| | `partner-sourcing-generator` | `partner-deep-mining` |
+| | `trade-gen2.1-un-sourcing` | `trade-gen2.2-un-partner-deep-mining` |
 |---|---|---|
 | 실행 시점 | 하루 4회 GitHub Actions cron | 사용자가 자연어로 요청할 때만 |
 | 하는 일 | EDA 리포트 재파싱 → 국가 우선순위 갱신 | 실제 WebSearch/WebFetch로 회사 검색·검증 |
@@ -88,7 +88,7 @@ HS Code 맥락에서만 검색 각도를 여러 개(도매상/전시회·협회 
 
 ---
 
-## 🔁 6. 실행 절차 (Claude가 직접 수행)
+## 🔁 6. 실행 절차 (AI 에이전트가 직접 수행)
 
 1. 조사 대상 선정 (기본 모드: 우선순위 상위 3~5개국 / 스코프 지정 모드: 지정된 표+국가)
 2. WebSearch로 각도를 바꿔가며 검색 (도매상, 전시회 디렉토리, LinkedIn, 현지어)
@@ -101,9 +101,9 @@ HS Code 맥락에서만 검색 각도를 여러 개(도매상/전시회·협회 
 
 ## 📁 7. 파일 목록
 
-- **스킬 정의**: [.agents/skills/partner-deep-mining/SKILL.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-deep-mining/SKILL.md)
-- **병합 스크립트**: [.agents/skills/partner-deep-mining/scripts/merge_research_findings.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-deep-mining/scripts/merge_research_findings.py)
-- **국가 우선순위 스킬(선행 단계)**: [.agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py)
+- **스킬 정의**: [.agents/skills/trade-gen2.2-un-partner-deep-mining/SKILL.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/trade-gen2.2-un-partner-deep-mining/SKILL.md)
+- **병합 스크립트**: [.agents/skills/trade-gen2.2-un-partner-deep-mining/scripts/merge_research_findings.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/trade-gen2.2-un-partner-deep-mining/scripts/merge_research_findings.py)
+- **국가 우선순위 스킬(선행 단계)**: [.agents/skills/trade-gen2.1-un-sourcing/scripts/generate_partner_sourcing.py](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/.agents/skills/trade-gen2.1-un-sourcing/scripts/generate_partner_sourcing.py)
 - **엑셀 DB (Sourcing_Candidates + Verified_Partners + Sourcing_History)**: [BIZ-Jeonbok/data/abalone_buyers_leads.xlsx](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/data/abalone_buyers_leads.xlsx)
 - **마크다운 리포트**: [BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md)
 - **실행 보고서**: [BIZ-Jeonbok/artifacts/partner_deep_mining_walkthrough.md](file:///C:/Users/leeak/OneDrive/1.HaeYu/HYU_RSCH/BIZ-Jeonbok/artifacts/partner_deep_mining_walkthrough.md)

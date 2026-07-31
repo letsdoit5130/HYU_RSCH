@@ -1,5 +1,5 @@
 ---
-name: trade-eda-generator
+name: trade-gen1-un-eda
 description: UN Comtrade 등 무역 통계 CSV 데이터를 기반으로 범용 EDA 리포트, 15개 시각화 차트, 1인 상사 시장개척 전략 및 HS Code별 TOP 10 유망국가 분석표를 자동 생성하는 스킬입니다. 무역 데이터, UN Comtrade CSV, EDA 리포트 자동 생성 요청 시 활성화됩니다.
 ---
 
@@ -14,7 +14,7 @@ description: UN Comtrade 등 무역 통계 CSV 데이터를 기반으로 범용 
 터미널이나 Python 명령어로 무역 CSV 파일 경로와 품목명, 출력 폴더를 지정하여 실행합니다:
 
 ```bash
-uv run python .agents/skills/trade-eda-generator/scripts/generate_trade_eda.py \
+uv run python .agents/skills/trade-gen1-un-eda/scripts/generate_trade_eda.py \
   --input BIZ-Jeonbok/BIZ-JB-Gathered.csv \
   --item "전복 (Abalone)" \
   --output_dir BIZ-Jeonbok

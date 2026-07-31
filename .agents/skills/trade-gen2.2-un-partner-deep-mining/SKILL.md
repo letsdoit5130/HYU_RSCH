@@ -1,11 +1,11 @@
 ---
-name: partner-deep-mining
-description: partner-sourcing-generator가 만든 소싱 후보국가 리스트를 입력으로, 실제 WebSearch/WebFetch를 사용해 진짜 존재하는 수입 디스트리뷰터·독립 에이전트를 출처 URL과 함께 찾아 트래커에 채워 넣는 스킬입니다. "딥마이닝", "실제 파트너 찾아줘", "바이어 리서치 해줘", "파트너 소싱 조사", "에이전트 발굴" 요청 시 활성화됩니다.
+name: trade-gen2.2-un-partner-deep-mining
+description: trade-gen2.1-un-sourcing가 만든 소싱 후보국가 리스트를 입력으로, 실제 WebSearch/WebFetch를 사용해 진짜 존재하는 수입 디스트리뷰터·독립 에이전트를 출처 URL과 함께 찾아 트래커에 채워 넣는 스킬입니다. "딥마이닝", "실제 파트너 찾아줘", "바이어 리서치 해줘", "파트너 소싱 조사", "에이전트 발굴" 요청 시 활성화됩니다.
 ---
 
 # 🔎 Partner Deep Mining (실제 웹 검색 기반 파트너 발굴 스킬)
 
-`partner-sourcing-generator`가 만든 "어느 나라를 먼저 조사해야 하는지"(우선순위 점수) 리스트를 입력받아,
+`trade-gen2.1-un-sourcing`가 만든 "어느 나라를 먼저 조사해야 하는지"(우선순위 점수) 리스트를 입력받아,
 **이 스킬을 실행하는 AI 에이전트가 직접 웹 검색·페이지 열람 도구로 실재하는 회사·에이전트를 찾아**
 출처 URL과 함께 트래커에 채워 넣습니다.
 
@@ -17,16 +17,16 @@ description: partner-sourcing-generator가 만든 소싱 후보국가 리스트�
 
 ## 🕐 자동화(cron)와의 관계 — 별도 실행
 
-- **`partner_sourcing.yml` (하루 4회 cron)**: `partner-sourcing-generator`만 실행합니다. EDA 리포트의
+- **`partner_sourcing.yml` (하루 4회 cron)**: `trade-gen2.1-un-sourcing`만 실행합니다. EDA 리포트의
   국가별 순위/수입액을 다시 읽어 `Sourcing_Candidates` 시트를 최신화할 뿐, **실제 회사를 검색하지
   않습니다** (정적 스크립트는 실제 웹 검색을 할 수 없기 때문에 애초에 자동화 대상이 아닙니다).
-- **이 스킬(`partner-deep-mining`)은 cron에 포함되지 않고, 사용자가 필요할 때 자연어로 요청하면
+- **이 스킬(`trade-gen2.2-un-partner-deep-mining`)은 cron에 포함되지 않고, 사용자가 필요할 때 자연어로 요청하면
   그때 온디맨드로 실행됩니다.** 예: *"표1, 표2에 있는 일본 컨택해야 할 로컬파트너 먼저 검색해줘,
   최대한 많은 자료 수집해서 정리해줘"*
 - 두 작업은 실행 시점이 다르지만 **결과는 항상 같은 파일(`{slug}_buyers_leads.xlsx`의
   `Verified_Partners` 시트)에 누적**됩니다. cron이 후보국 우선순위를 갱신해도, 이 스킬이 이미
   찾아 놓은 파트너 조사 결과(사용자가 입력/확인한 값)는 지워지지 않습니다
-  (`partner-sourcing-generator`의 병합 규칙 — 사용자 입력 필드는 보존).
+  (`trade-gen2.1-un-sourcing`의 병합 규칙 — 사용자 입력 필드는 보존).
 
 ---
 
@@ -53,7 +53,7 @@ description: partner-sourcing-generator가 만든 소싱 후보국가 리스트�
 
 ### 사전 조건
 `{output_dir}/data/{slug}_buyers_leads.xlsx`의 `Sourcing_Candidates` 시트가 이미 존재해야 합니다
-(없다면 먼저 `trade-eda-generator` → `partner-sourcing-generator` 순서로 생성).
+(없다면 먼저 `trade-gen1-un-eda` → `trade-gen2.1-un-sourcing` 순서로 생성).
 
 ### 1단계 — 조사 대상 선정 (기본 모드 vs 스코프 지정 모드)
 
@@ -121,7 +121,7 @@ description: partner-sourcing-generator가 만든 소싱 후보국가 리스트�
 
 ### 5단계 — 병합
 ```bash
-uv run python .agents/skills/partner-deep-mining/scripts/merge_research_findings.py \
+uv run python .agents/skills/trade-gen2.2-un-partner-deep-mining/scripts/merge_research_findings.py \
   --findings <findings.json 경로> \
   --item "<품목명>" \
   --output_dir <프로젝트 폴더> \
@@ -161,5 +161,5 @@ uv run python .agents/skills/partner-deep-mining/scripts/merge_research_findings
 ---
 
 ## 참고
-- 국가 우선순위/집계 로직: `.agents/skills/partner-sourcing-generator/`
-- 무역 데이터 원천: `.agents/skills/trade-eda-generator/`
+- 국가 우선순위/집계 로직: `.agents/skills/trade-gen2.1-un-sourcing/`
+- 무역 데이터 원천: `.agents/skills/trade-gen1-un-eda/`

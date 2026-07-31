@@ -35,7 +35,7 @@ jobs:
 
       - name: Run Partner Sourcing Generator (Abalone)
         run: |
-          python .agents/skills/partner-sourcing-generator/scripts/generate_partner_sourcing.py \
+          python .agents/skills/trade-gen2.1-un-sourcing/scripts/generate_partner_sourcing.py \
             --item "Abalone" \
             --output_dir BIZ-Jeonbok \
             --item_slug abalone \
