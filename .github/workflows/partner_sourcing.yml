@@ -1,9 +1,10 @@
 name: 4x Daily Abalone Partner Sourcing Pipeline (KST 06:00, 12:00, 18:00, 00:00)
 
 on:
-  schedule:
-    # 매일 4회 무인 자동 실행 (KST 06:00, 12:00, 18:00, 00:00 = UTC 21:00, 03:00, 09:00, 15:00)
-    - cron: '0 3,9,15,21 * * *'
+  # schedule 비활성화 (2026-07-31, 사용자 요청) — 자동 4x 실행 중단, 수동 실행(workflow_dispatch)만 유지.
+  # 재활성화하려면 아래 주석을 해제.
+  # schedule:
+  #   - cron: '0 3,9,15,21 * * *'
   workflow_dispatch: {}
 
 env:

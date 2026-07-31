@@ -1,9 +1,10 @@
 name: Autonomous Partner Deep Mining (Gemini + Search Grounding, 1x Daily)
 
 on:
-  schedule:
-    # 하루 1회 무인 자동 실행 (KST 06:00 = UTC 21:00). API 종량 과금이라 4x cron보다 낮은 빈도.
-    - cron: '0 21 * * *'
+  # schedule 비활성화 (2026-07-31, 사용자 요청) — 자동 1x 실행 중단, 수동 실행(workflow_dispatch)만 유지.
+  # 재활성화하려면 아래 주석을 해제.
+  # schedule:
+  #   - cron: '0 21 * * *'
   workflow_dispatch:
     inputs:
       top_n:
