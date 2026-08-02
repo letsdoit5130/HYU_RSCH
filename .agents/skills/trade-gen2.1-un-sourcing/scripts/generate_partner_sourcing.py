@@ -242,6 +242,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
 
     clean_item = item.split('(')[0].strip() if '(' in item else item.strip()
     slug = (item_slug or re.sub(r'[^a-zA-Z0-9]+', '_', item).strip('_').lower() or 'item')
+    slug_title = '_'.join(w.capitalize() for w in slug.split('_'))  # 파일명용 — 공백 없이 단어 경계만 유지 (예: power_take_off -> Power_Take_Off)
 
     data_dir = os.path.join(output_dir, 'data')
     reports_dir = os.path.join(output_dir, 'reports')
@@ -249,7 +250,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
     os.makedirs(reports_dir, exist_ok=True)
 
     if not eda_report:
-        eda_report = os.path.join(reports_dir, f"BIZ-{clean_item}_Gathered_EDA_Report.md")
+        eda_report = os.path.join(reports_dir, f"BIZ-{slug_title}_Gathered_EDA_Report.md")
 
     print("=" * 60)
     print(f"🌐 소싱 후보국가 & 파트너 리서치 트래커 가동: {item}")
@@ -276,7 +277,7 @@ def generate_partner_sourcing(item, output_dir, eda_report=None, item_slug=None)
 
     excel_path = os.path.join(data_dir, f'{slug}_buyers_leads.xlsx')
     csv_path = os.path.join(data_dir, f'{slug}_sourcing_history.csv')
-    md_report_path = os.path.join(reports_dir, f'{clean_item}_Buyers_Lead_List.md')
+    md_report_path = os.path.join(reports_dir, f'{slug_title}_Buyers_Lead_List.md')
 
     new_records = build_candidate_rows(parsed_rows, now_str)
     df_existing_leads, df_existing_history = load_existing_leads(excel_path)

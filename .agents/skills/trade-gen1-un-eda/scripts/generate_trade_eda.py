@@ -12,6 +12,7 @@ TOP 10 HS Code별 TOP 10 유망국가 11대 명세 분석표, 1인 상사 시장
 """
 
 import os
+import re
 import sys
 import argparse
 import numpy as np
@@ -101,7 +102,7 @@ def df_to_md(obj, empty_msg="데이터 없음"):
 # 메인 엔진
 # ---------------------------------------------------------------------------
 
-def generate_trade_eda(csv_input, item_name, output_dir):
+def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None):
     print("=" * 60)
     print(f"🚀 범용 무역 EDA 엔진 가동: {item_name}")
     print("=" * 60)
@@ -176,6 +177,8 @@ def generate_trade_eda(csv_input, item_name, output_dir):
     os.makedirs(rep_dir, exist_ok=True)
 
     clean_item = item_name.split('(')[0].strip() if '(' in item_name else item_name.strip()
+    slug = (item_slug or re.sub(r'[^a-zA-Z0-9]+', '_', item_name).strip('_').lower() or 'item')
+    slug_title = '_'.join(w.capitalize() for w in slug.split('_'))  # 파일명용 — 공백 없이 단어 경계만 유지 (예: power_take_off -> Power_Take_Off)
 
     EXCLUDE_AGG = ['World', 'Free Zones', 'Areas, nes', 'Special Categories']
     plt.rcParams['font.size'] = 10
@@ -812,7 +815,7 @@ def generate_trade_eda(csv_input, item_name, output_dir):
     # 최종 마크다운 리포트 조립
     # =====================================================================
     input_basename = os.path.basename(csv_input)
-    report_file = os.path.join(rep_dir, f"BIZ-{clean_item}_Gathered_EDA_Report.md")
+    report_file = os.path.join(rep_dir, f"BIZ-{slug_title}_Gathered_EDA_Report.md")
 
     full_md = f"""# 🌊 {input_basename} — {clean_item} 무역 데이터 종합 EDA 및 글로벌 영업전략 리포트
 
@@ -996,7 +999,8 @@ if __name__ == "__main__":
     parser.add_argument("--input", type=str, required=True, help="취합된 무역 CSV 파일 경로")
     parser.add_argument("--item", type=str, default="품목", help="품목명")
     parser.add_argument("--output_dir", type=str, default="output", help="출력 프로젝트 폴더")
+    parser.add_argument("--item_slug", type=str, default=None, help="데이터/리포트 파일명 슬러그 (생략 시 --item에서 자동 생성)")
     args = parser.parse_args()
 
-    ok = generate_trade_eda(args.input, args.item, args.output_dir)
+    ok = generate_trade_eda(args.input, args.item, args.output_dir, args.item_slug)
     sys.exit(0 if ok else 1)

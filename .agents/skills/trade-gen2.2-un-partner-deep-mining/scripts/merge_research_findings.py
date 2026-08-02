@@ -219,13 +219,14 @@ def merge(findings_path, output_dir, item, item_slug=None):
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     clean_item = item.split('(')[0].strip() if '(' in item else item.strip()
     slug = (item_slug or re.sub(r'[^a-zA-Z0-9]+', '_', item).strip('_').lower() or 'item')
+    slug_title = '_'.join(w.capitalize() for w in slug.split('_'))  # 파일명용 — 공백 없이 단어 경계만 유지 (예: power_take_off -> Power_Take_Off)
 
     data_dir = os.path.join(output_dir, 'data')
     reports_dir = os.path.join(output_dir, 'reports')
     os.makedirs(data_dir, exist_ok=True)
     os.makedirs(reports_dir, exist_ok=True)
     excel_path = os.path.join(data_dir, f'{slug}_buyers_leads.xlsx')
-    md_report_path = os.path.join(reports_dir, f'{clean_item}_Buyers_Lead_List.md')
+    md_report_path = os.path.join(reports_dir, f'{slug_title}_Buyers_Lead_List.md')
 
     if not os.path.exists(excel_path):
         print_error(

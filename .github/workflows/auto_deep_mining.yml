@@ -1,13 +1,28 @@
-name: Autonomous Partner Deep Mining (Gemini + Search Grounding, 1x Daily)
+name: Autonomous Partner Deep Mining (Gemini + Search Grounding, Daily at KST 00:00)
 
 on:
   schedule:
-    # 매 6시간마다 깃허브 서버에서 무인 자동 가동 (컴퓨터를 꺼도 자동 검색 & 커밋)
-    - cron: '0 */6 * * *'
+    # 매일 1회, UTC 15:00 = KST 00:00(자정)에 무인 자동 가동 (컴퓨터를 꺼도 자동 검색 & 커밋).
+    # BIZ-*/data/*_buyers_leads.xlsx 중 Sourcing_Candidates 시트가 있는 프로젝트를 자동으로
+    # 모두 찾아 처리한다 — 새 품목이 생겨도 이 파일을 수정할 필요가 없다
+    # (trade-gen1 → trade-gen2.1을 한 번만 거치면 다음 자정부터 자동 포함됨).
+    - cron: '0 15 * * *'
   workflow_dispatch:
     inputs:
+      item:
+        description: '(선택) 이 프로젝트 하나만 실행할 때 품목명 지정 (예: Abalone). 비워두면 전 프로젝트 자동 발견'
+        required: false
+        default: ''
+      output_dir:
+        description: '(선택) --item과 함께 지정 — 프로젝트 루트 폴더 (예: BIZ-Jeonbok)'
+        required: false
+        default: ''
+      item_slug:
+        description: '(선택) --item과 함께 지정 — 데이터 파일명 슬러그 (예: abalone)'
+        required: false
+        default: ''
       top_n:
-        description: '이번 실행에서 조사할 신규 후보국 및 시장 수 (목표: 최대 10,000개 수집)'
+        description: '프로젝트당 조사할 신규 후보국 수'
         required: false
         default: '10000'
 
@@ -34,24 +49,32 @@ jobs:
           export PATH="$HOME/.local/bin:$PATH"
           uv pip install --system pandas openpyxl tabulate google-genai
 
-      - name: Run Autonomous Deep Mining (Abalone)
+      - name: Run Autonomous Deep Mining (Auto-Discovered Projects)
         env:
           # 저장소 Secret 이름은 HAEYU_RESEARCH로 등록돼 있음 (Gemini API 키 값).
           # 스크립트 내부에서는 GEMINI_API_KEY 환경변수명을 그대로 사용하므로 여기서 매핑한다.
           GEMINI_API_KEY: ${{ secrets.HAEYU_RESEARCH }}
+          IN_ITEM: ${{ github.event.inputs.item }}
+          IN_OUTPUT_DIR: ${{ github.event.inputs.output_dir }}
+          IN_ITEM_SLUG: ${{ github.event.inputs.item_slug }}
+          IN_TOP_N: ${{ github.event.inputs.top_n }}
         run: |
-          python .agents/skills/trade-gen4-un-auto-mining/scripts/autonomous_deep_mining.py \
-            --item "Abalone" \
-            --output_dir BIZ-Jeonbok \
-            --item_slug abalone \
-            --top_n ${{ github.event.inputs.top_n || 10000 }}
+          TOP_N="${IN_TOP_N:-10000}"
+          if [ -n "$IN_ITEM" ] && [ -n "$IN_OUTPUT_DIR" ] && [ -n "$IN_ITEM_SLUG" ]; then
+            echo "단일 프로젝트 온디맨드 실행: $IN_ITEM ($IN_OUTPUT_DIR)"
+            python .agents/skills/trade-gen4-un-auto-mining/scripts/run_all_projects.py \
+              --item "$IN_ITEM" --output_dir "$IN_OUTPUT_DIR" --item_slug "$IN_ITEM_SLUG" --top_n "$TOP_N"
+          else
+            echo "전 프로젝트 자동 발견 모드"
+            python .agents/skills/trade-gen4-un-auto-mining/scripts/run_all_projects.py --top_n "$TOP_N"
+          fi
 
       - name: Auto Commit and Push Updated Verified Partners
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action Bot"
 
-          TARGET_FILES="BIZ-Jeonbok/reports/Abalone_Buyers_Lead_List.md BIZ-Jeonbok/data/abalone_buyers_leads.xlsx BIZ-Jeonbok/data/abalone_auto_mining_log.jsonl"
+          TARGET_FILES="BIZ-*/reports/*.md BIZ-*/data/*_buyers_leads.xlsx BIZ-*/data/*_auto_mining_log.jsonl"
 
           if [ -z "$(git status --porcelain -- $TARGET_FILES)" ]; then
             echo "변경 사항 없음 — 커밋 생략"
@@ -59,7 +82,7 @@ jobs:
           fi
 
           git add $TARGET_FILES
-          git commit -m "Automated autonomous deep mining update (Gemini) [skip ci]" || { echo "커밋할 변경 사항 없음"; exit 0; }
+          git commit -m "Automated autonomous deep mining update (Gemini, all projects) [skip ci]" || { echo "커밋할 변경 사항 없음"; exit 0; }
 
           for attempt in 1 2 3; do
             if git push origin "HEAD:${GITHUB_REF_NAME}"; then

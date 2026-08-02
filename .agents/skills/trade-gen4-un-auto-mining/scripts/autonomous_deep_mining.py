@@ -45,6 +45,15 @@ MERGE_SCRIPT = os.path.join(SKILLS_DIR, 'trade-gen2.2-un-partner-deep-mining', '
 SYSTEM_PROMPT = """당신은 무역 파트너 리서치 담당자입니다. Google Search 도구로 실제 검색한
 결과에 근거해서만 답합니다.
 
+검색 각도 (반드시 아래 각도를 모두 시도한 뒤 응답할 것 — 일반 검색 한 번만 하고 끝내지 말 것):
+1. 일반 수입 디스트리뷰터/도매상 검색 (예: "{item} importer {country}")
+2. LinkedIn 공개 프로필 검색 (예: "{item} broker OR agent {country} site:linkedin.com") —
+   로그인 없이 공개된 프로필 URL만 대상으로 한다.
+3. 현지어 및 현지 도메인(TLD) 검색 (예: 일본이면 site:.jp + 품목의 현지어 표기, 베트남이면
+   site:.vn 등) — 영어 검색만으로는 현지 중소 디스트리뷰터가 잘 나오지 않으므로 반드시 시도한다.
+4. 무역 전시회/협회 디렉토리 검색 (예: "{item} trade show exhibitor directory {country}",
+   customs broker association directory).
+
 절대 규칙:
 1. 실제로 검색해서 확인한 회사/에이전트만 보고한다. 지어내지 않는다.
 2. 모든 항목에는 반드시 실제로 그 정보를 확인한 출처 URL(source_url)을 포함한다. 출처를
@@ -88,6 +97,13 @@ Google Search로 찾아주세요.
 
 관련 HS Code/무역 데이터 맥락 (참고용, 그대로 보고하지 말고 검색에 활용):
 {hs_context}
+
+다음 검색 각도를 모두 시도하세요 (한 가지 검색만 하고 끝내지 마세요):
+1. 일반 수입 디스트리뷰터/도매상 검색: "{item} importer {country}"
+2. LinkedIn 공개 프로필 검색: "{item} broker OR agent {country} site:linkedin.com"
+3. {country}의 현지어/현지 도메인(TLD) 검색 — 영어 검색으로 안 나오는 현지 중소 디스트리뷰터를
+   찾기 위함
+4. 무역 전시회/협회 디렉토리 검색: "{item} trade show exhibitor directory {country}"
 
 국가당 최대 3개 업체까지, 실제로 검색으로 출처를 확인할 수 있는 것만 JSON 배열로 응답하세요."""
 
@@ -178,6 +194,10 @@ def append_audit_log(audit_path, now_str, entries):
 
 
 def run(item, output_dir, item_slug, top_n, model):
+    """단일 프로젝트를 조사한다. sys.exit()를 직접 호출하지 않고 종료 코드(int)를 반환한다 —
+    run_all_projects.py가 여러 프로젝트에 대해 이 함수를 반복 호출할 때 한 프로젝트의 오류로
+    전체 프로세스가 죽지 않도록 하기 위함. CLI 단독 실행 시의 종료 코드 처리는 하단
+    `if __name__ == "__main__":` 블록이 담당한다."""
     now_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     clean_item = item.split('(')[0].strip() if '(' in item else item.strip()
     slug = (item_slug or re.sub(r'[^a-zA-Z0-9]+', '_', item).strip('_').lower() or 'item')
@@ -195,7 +215,7 @@ def run(item, output_dir, item_slug, top_n, model):
             "autonomous_deep_mining.py",
             "GitHub Secrets(또는 로컬 환경변수)에 GEMINI_API_KEY를 설정하세요.",
         )
-        sys.exit(1)
+        return 1
 
     if not os.path.exists(excel_path):
         print_error(
@@ -203,12 +223,12 @@ def run(item, output_dir, item_slug, top_n, model):
             "autonomous_deep_mining.py",
             "먼저 trade-gen2.1-un-sourcing으로 소싱 후보국가 트래커를 생성하세요.",
         )
-        sys.exit(1)
+        return 1
 
     targets = select_target_countries(excel_path, top_n)
     if not targets:
         print("조사할 신규 후보국이 없습니다 (모두 조사 완료 상태이거나 후보 없음). 종료합니다.")
-        return
+        return 0
 
     print(f"이번 실행 대상 ({len(targets)}개국): {[t.get('국가 (Country)') for t in targets]}")
 
@@ -249,7 +269,7 @@ def run(item, output_dir, item_slug, top_n, model):
 
     if not all_findings:
         print("확보된 findings가 없습니다 (전부 미확인/출처없음으로 제외됨). 병합 생략.")
-        return
+        return 0
 
     tmp_findings_path = os.path.join(data_dir, f'.tmp_{slug}_auto_findings.json')
     with open(tmp_findings_path, 'w', encoding='utf-8') as f:
@@ -266,7 +286,7 @@ def run(item, output_dir, item_slug, top_n, model):
     except OSError:
         pass
 
-    sys.exit(result.returncode)
+    return result.returncode
 
 
 if __name__ == "__main__":
@@ -278,4 +298,4 @@ if __name__ == "__main__":
     parser.add_argument("--model", type=str, default="gemini-2.5-flash", help="사용할 Gemini 모델")
     args = parser.parse_args()
 
-    run(args.item, args.output_dir, args.item_slug, args.top_n, args.model)
+    sys.exit(run(args.item, args.output_dir, args.item_slug, args.top_n, args.model))

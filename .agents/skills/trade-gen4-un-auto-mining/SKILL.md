@@ -33,9 +33,19 @@ GitHub Actions에서 Gemini API를 직접 호출해, 사람 개입·컴퓨터 �
 ## 💰 비용에 대해
 
 이건 **API 종량제**입니다. 대화형 세션과 달리 실행할 때마다 실제 비용이 발생합니다.
-- 기본값은 **1회 실행에 신규 후보국 상위 3개국만** 조사합니다(`--top_n 3`).
-- 기본 스케줄은 **하루 1회**입니다 (기존 국가 우선순위 갱신 cron의 4회보다 훨씬 낮은 빈도).
-- `--top_n`을 늘리거나 스케줄을 더 자주 돌리면 비용도 비례해서 늘어납니다.
+- 스크립트를 로컬에서 `autonomous_deep_mining.py` 단독으로 직접 실행할 때(`--top_n` 생략 시)는
+  **1회 실행에 신규 후보국 상위 3개국만** 조사합니다(`--top_n 3`, 비용 안전장치용 기본값).
+- `.github/workflows/auto_deep_mining.yml`의 `workflow_dispatch`/`schedule` 기본값은
+  `top_n=10000`으로 설정돼 있습니다 — 즉 실제 자동 실행은 매번 프로젝트당 남은 "신규 후보"
+  국가를 (최대 10,000개까지) 모두 소진할 때까지 처리합니다. 국가 수가 10,000개보다 훨씬 적으므로
+  실질적으로는 "그 시점까지 조사되지 않은 국가를 전부 처리"하는 것과 같습니다.
+- 스케줄은 **매일 1회, KST 자정(00:00)**입니다 (이전에는 6시간마다였으나, ①대화형 세션(2.2)이
+  주 조사 수단이 되고 ②처리 대상 프로젝트가 여러 개로 늘어나면서 비용 통제를 위해 하루 1회로
+  낮췄습니다).
+- 매일 실행이 **`BIZ-*/data/*_buyers_leads.xlsx` 중 `Sourcing_Candidates` 시트가 있는 프로젝트를
+  전부** 처리합니다 (`run_all_projects.py`, 아래 참고) — 프로젝트 수만큼 비용이 비례해서
+  늘어납니다.
+- 비용을 줄이고 싶으면 워크플로우 파일의 `top_n` 기본값을 낮추거나 `cron` 주기를 늘리세요.
 
 ---
 
@@ -51,6 +61,7 @@ GitHub Actions에서 Gemini API를 직접 호출해, 사람 개입·컴퓨터 �
 
 ## 🛠️ 실행 방법
 
+**단일 프로젝트만 (로컬 디버깅 등):**
 ```bash
 export GEMINI_API_KEY=...
 uv run python .agents/skills/trade-gen4-un-auto-mining/scripts/autonomous_deep_mining.py \
@@ -60,8 +71,26 @@ uv run python .agents/skills/trade-gen4-un-auto-mining/scripts/autonomous_deep_m
   --top_n 3
 ```
 
-GitHub Actions에서는 `.github/workflows/auto_deep_mining.yml`이 하루 1회 자동 실행하고,
-`workflow_dispatch`로 수동 실행도 가능합니다(`top_n` 입력 파라미터 지정 가능).
+**전 프로젝트 자동 발견 (GitHub Actions가 실제로 매일 실행하는 방식):**
+```bash
+export GEMINI_API_KEY=...
+uv run python .agents/skills/trade-gen4-un-auto-mining/scripts/run_all_projects.py --top_n 10000
+```
+`run_all_projects.py`는 저장소를 스캔해 `BIZ-*/data/*_buyers_leads.xlsx` 중
+`Sourcing_Candidates` 시트가 있는 프로젝트를 모두 찾아 순서대로 처리한다. 한 프로젝트에서
+오류가 나도 나머지 프로젝트는 계속 처리한다. `--item`/`--output_dir`/`--item_slug`를 셋 다
+지정하면 발견 로직을 건너뛰고 그 프로젝트 하나만 처리한다.
+
+GitHub Actions(`.github/workflows/auto_deep_mining.yml`)는 **매일 KST 자정(00:00)** 1회
+`run_all_projects.py`를 인자 없이 자동 실행합니다(=전 프로젝트 자동 발견 모드).
+`workflow_dispatch`로 수동 실행할 수도 있으며, 이때 `item`/`output_dir`/`item_slug`를 모두
+채우면 그 프로젝트 하나만, 비워두면 자정 스케줄과 동일하게 전 프로젝트를 처리합니다.
+
+### ➕ 새 품목(프로젝트)을 자동화에 포함시키려면
+
+**워크플로우 YAML을 수정할 필요가 없습니다.** `trade-gen1-un-eda` → `trade-gen2.1-un-sourcing`을
+새 품목에 대해 한 번만 실행해 `{slug}_buyers_leads.xlsx`에 `Sourcing_Candidates` 시트를
+만들어두면, 다음 자정 실행부터 `run_all_projects.py`가 자동으로 그 프로젝트를 발견해 처리합니다.
 
 ---
 
