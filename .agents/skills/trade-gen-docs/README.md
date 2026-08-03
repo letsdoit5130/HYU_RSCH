@@ -1,7 +1,8 @@
 # Trade-Gen 파이프라인 — 종합 흐름 문서
 
-> UN Comtrade 무역 통계 하나로 시작해서 "실제 검증된 해외 파트너 리스트"까지 도달하는
-> 5개 스킬(`trade-gen1` ~ `trade-gen4`)의 전체 흐름을 한눈에 볼 수 있는 문서입니다.
+> UN Comtrade 무역 통계 하나로 시작해서 "실제 검증된 해외 파트너 리스트"와 "체크박스로 체크하며
+> 실행하는 로드맵"까지 도달하는 6개 스킬(`trade-gen1` ~ `trade-gen5`)의 전체 흐름을 한눈에 볼 수
+> 있는 문서입니다.
 > 각 스킬 자체의 사용법은 해당 폴더의 `SKILL.md`를, 개별 스킬의 파이프라인상 위치는
 > 각 폴더의 `docs/README.md`를 참고하세요. 이 문서는 **"지금 내가 어느 단계에 있고,
 > 다음에 뭘 실행해야 하는지"** 를 판단하기 위한 진입점입니다.
@@ -41,12 +42,21 @@ flowchart TD
     E --> F
     F["Verified_Partners 시트\n(같은 xlsx 파일에 누적, 서로 덮어쓰지 않음)"]
 
+    B1 --> H
+
+    subgraph S5["5단계 · trade-gen5-un-action-plan"]
+        H["generate_action_plan.py\nEDA 리포트 파싱"]
+        H --> H1["{품목}_Action_Plan.md\n체크박스 실행 로드맵\n(계절성 기한/Plan B/자금계획/샘플게이트)"]
+    end
+
     G["trade-gen3-un-partner-pipeline\n(1+2단계를 CLI 한 번으로 묶은 오케스트레이터)"] -.->|내부적으로 호출| B
     G -.->|내부적으로 호출| C
 ```
 
 **핵심 요약**: CSV → (1) EDA → (2) 국가 우선순위 트래커 → (3) 실제 파트너 검색(대화형 또는 자동) →
-`Verified_Partners`. `trade-gen3`는 (1)+(2)를 한 번에 묶어주는 지름길일 뿐 별도 산출물은 없습니다.
+`Verified_Partners`. **(5) 실행 로드맵은 (1)의 EDA 리포트만 있으면 바로 만들 수 있고, (2)/(3)과
+병행 진행**합니다 (로드맵의 "행동" 항목이 2/3단계 실행을 지시하는 구조). `trade-gen3`는 (1)+(2)를
+한 번에 묶어주는 지름길일 뿐 별도 산출물은 없습니다.
 
 ---
 
@@ -59,6 +69,7 @@ flowchart TD
 | 3-A | [`trade-gen2.2-un-partner-deep-mining`](../trade-gen2.2-un-partner-deep-mining/) | 대화형 AI (온디맨드) | 2단계 시트 | `Verified_Partners` 시트 |
 | 3-B | [`trade-gen4-un-auto-mining`](../trade-gen4-un-auto-mining/) | GitHub Actions + Gemini API (매일 자정) | 2단계 시트 | `Verified_Partners` 시트 |
 | (1+2 묶음) | [`trade-gen3-un-partner-pipeline`](../trade-gen3-un-partner-pipeline/) | CLI (결정론적) | 무역통계 CSV | 1단계+2단계 산출물 전부 |
+| 5 | [`trade-gen5-un-action-plan`](../trade-gen5-un-action-plan/) | CLI (결정론적) | 1단계 EDA 리포트 | `{품목}_Action_Plan.md` (체크박스 실행 로드맵) |
 
 각 스킬의 상세 문서: `trade-gen{N}/docs/README.md` (파이프라인 위치 + 최근 변경 이력),
 사용법: `trade-gen{N}/SKILL.md`.
@@ -91,6 +102,11 @@ UN Comtrade 웹사이트에서 수동 다운로드. (Import는 `reporter=all`로
 `trade-gen3-un-partner-pipeline`(1+2) 실행 후, 3단계는 반드시 자연어로 추가 요청해야 합니다
 (AI의 실시간 판단이 필요해 CLI로 묶을 수 없음).
 
+**Q6. EDA 리포트는 있는데 "그래서 지금 뭐부터 해야 하지?"를 순서대로 안내받고 싶다.**
+→ `trade-gen5-un-action-plan` 실행. 우선 개척 시장 3선/삼국무역 3선을 체크박스 스텝으로
+바꿔주고, 진행하면서 "1번 끝났어"라고 말하면 AI가 로드맵 파일을 다시 읽어 다음 미체크
+스텝을 안내합니다. 2/3단계(소싱·파트너 검색)와는 독립적으로, EDA만 있으면 바로 생성 가능합니다.
+
 ---
 
 ## 4. 파일 의존성 맵 (누가 무엇을 읽고 쓰는가)
@@ -100,8 +116,9 @@ UN Comtrade 웹사이트에서 수동 다운로드. (Import는 `reporter=all`로
 ├── (raw) 무역통계 CSV                  ← 사람이 수집 또는 comtrade_api_collector.py
 ├── images/*.png                       ← trade-gen1 이 씀
 ├── reports/
-│   ├── BIZ-{품목}_Gathered_EDA_Report.md   ← trade-gen1 이 씀 / trade-gen2.1 이 읽음
-│   └── {품목}_Buyers_Lead_List.md          ← trade-gen2.1 이 씀 (사람이 읽는 요약)
+│   ├── BIZ-{품목}_Gathered_EDA_Report.md   ← trade-gen1 이 씀 / trade-gen2.1·trade-gen5 가 읽음
+│   ├── {품목}_Buyers_Lead_List.md          ← trade-gen2.1 이 씀 (사람이 읽는 요약)
+│   └── {품목}_Action_Plan.md               ← trade-gen5 가 씀 (체크박스 실행 로드맵, 재실행해도 [x] 보존)
 └── data/
     ├── {slug}_buyers_leads.xlsx
     │     ├─ Sourcing_Candidates 시트   ← trade-gen2.1 이 씀 / trade-gen2.2·trade-gen4 가 읽음
