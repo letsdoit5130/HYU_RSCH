@@ -114,13 +114,15 @@ def run_chart(label, fn):
         return None
 
 
-def df_to_md(obj, empty_msg="데이터 없음"):
+def df_to_md(obj, empty_msg="데이터 없음", index=True):
+    """DataFrame/Series를 마크다운 표로 변환. index=False는 일반 컬럼(예: B/C-D 국가쌍처럼
+    MultiIndex로 묶으면 tabulate가 헤더 없는 튜플 한 칸으로 뭉개버리는 경우)에 사용한다."""
     if obj is None:
         return empty_msg
     if hasattr(obj, 'empty') and obj.empty:
         return empty_msg
     try:
-        return obj.to_markdown()
+        return obj.to_markdown(index=index)
     except Exception:
         return str(obj)
 
@@ -1145,7 +1147,7 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                 })
         if tri_rows_hs:
             tri_df_hs = pd.DataFrame(tri_rows_hs).sort_values(by='마진갭(%)', ascending=False).head(8)
-            triangular_blocks.append(f"#### 📦 [{hs_label}]\n\n{df_to_md(tri_df_hs.set_index(['B(소싱국)', 'C/D(판매국)']))}")
+            triangular_blocks.append(f"#### 📦 [{hs_label}]\n\n{df_to_md(tri_df_hs, index=False)}")
         else:
             triangular_blocks.append(f"#### 📦 [{hs_label}]\n\n삼국무역 후보를 산출할 수 있는 데이터가 부족합니다.")
 
