@@ -1070,6 +1070,84 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
         price_band_md = "적정단가를 산출할 수 있는 유효 데이터가 부족합니다."
 
     # =====================================================================
+    # (신규) 삼국무역(중계무역) 후보 매트릭스
+    # home_country(A국) 소싱이 여의치 않을 때, 대체 소싱국(B) → 판매 타겟국(C/D)
+    # 조합을 마진갭 기준으로 자동 랭킹한다. home_country는 이 거래에 끼지 않으므로
+    # B/C/D 후보 모두에서 제외한다.
+    # =====================================================================
+    def origin_price_estimate(country):
+        """country의 평균 판매(수출)단가 추정치와 신뢰도 라벨을 반환.
+        Export가 reporter=all로 직접 신고돼 있으면 그 값을, 아니면 상대국들이
+        '이 나라에서 수입했다'고 신고한 Import 미러 단가로 근사한다."""
+        if exp_reporter_multi and country in exp_df[reporter_col].values:
+            p = exp_df[exp_df[reporter_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+            if not p.empty:
+                return p.mean(), '직접신고(FOB)'
+        p2 = imp_df_ranked[imp_df_ranked[partner_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+        if not p2.empty:
+            return p2.mean(), '간접추정(상대국 CIF 기준)'
+        return np.nan, None
+
+    def supplier_share_in_market(market, supplier):
+        sub = imp_df_ranked[imp_df_ranked[reporter_col] == market]
+        tot = sub['clean_value'].sum()
+        if tot <= 0:
+            return np.nan
+        sup_val = sub[sub[partner_col] == supplier]['clean_value'].sum()
+        return sup_val / tot * 100
+
+    triangular_B = [c for c in comp_grp.index if c not in home_match_names][:5]
+    triangular_C = [m for m in top_market_df.index][:5]
+
+    tri_rows = []
+    for b in triangular_B:
+        b_price, b_conf = origin_price_estimate(b)
+        if pd.isna(b_price) or b_price <= 0:
+            continue
+        for c in triangular_C:
+            if b == c:
+                continue
+            c_sub = imp_df_ranked[imp_df_ranked[reporter_col] == c]
+            c_prices = c_sub['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+            if c_prices.empty:
+                continue
+            c_price = c_prices.mean()
+            margin_pct = (c_price - b_price) / b_price * 100
+            b_share = supplier_share_in_market(c, b)
+            if pd.isna(b_share) or b_share < 5:
+                verdict = '🟢 화이트스페이스(B 미진출)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
+            else:
+                verdict = f'🟡 이미 B 진출({b_share:.0f}%)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
+            tri_rows.append({
+                'B(소싱국)': flag_hub(b),
+                'C/D(판매국)': flag_hub(c),
+                f'B 판매단가($/kg, {b_conf})': round(b_price, 1),
+                'C/D 시장평균단가($/kg)': round(c_price, 1),
+                '마진갭(%)': round(margin_pct, 0),
+                'B의 현재 C/D 점유율(%)': round(b_share, 1) if pd.notna(b_share) else '0(미진출)',
+                '판정': verdict,
+            })
+
+    if tri_rows:
+        tri_df = pd.DataFrame(tri_rows).sort_values(by='마진갭(%)', ascending=False).head(10)
+        triangular_md = df_to_md(tri_df.set_index(['B(소싱국)', 'C/D(판매국)']))
+        triangular_md += (
+            "\n\n> ⚠️ **반드시 확인 후 실행**: 위 표는 무역통계상 가격 갭만 보여줄 뿐, 실제 기회는 대부분 "
+            "① B-C/D 간 신용/금융 공백, ② MOQ 미스매치, ③ 신뢰 중개 필요성에서 나옵니다 — 가격 갭만 "
+            "보고 뛰어들면 이미 B가 직접 더 싸게 팔고 있는 시장일 수 있습니다. 또한 (1) 한국이 거래에 "
+            f"끼지 않으므로 한국 FTA 협정세율이 전혀 적용되지 않고, (2) 외국환거래법상 **중계무역**은 "
+            "일반 수출과 다른 별도 신고 절차(외국인수수입/외국인도수출)와 K-SURE 상품이 필요하며, "
+            "(3) B/C/D가 제재 대상국인지 반드시 사전 확인해야 합니다. (4) 위 단가는 데이터셋에 포함된 "
+            "전체 HS Code를 블렌딩한 평균입니다 — 광범위한 catch-all 코드가 섞여 있으면 왜곡될 수 있으니 "
+            "위 \"TOP HS Code별 유망 타겟시장 11대 명세 표\"의 HS Code별 단가와 교차 확인하세요."
+        )
+    else:
+        triangular_md = (
+            "삼국무역 후보를 산출할 수 있는 데이터가 부족합니다 (경쟁 수출국/타겟시장 단가 데이터 필요). "
+            "Export를 `reporter=all`로 수집하면 B의 판매단가가 간접추정이 아닌 직접신고 기준으로 정확해집니다."
+        )
+
+    # =====================================================================
     # TOP 5 실전 무역 고도화 패키지 (품목 파라미터화)
     # =====================================================================
     pro_advanced_package_text = f"""
@@ -1148,7 +1226,7 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 본 리포트는 `{input_basename}` {clean_item} 무역 데이터셋(총 {total_rec:,}행)을 대상으로 데이터 기반
 **1인 종합상사 최적 개척 시장 3선 전략**, 무역액 기준 **동적 산출 TOP {TOP_N_HS} HS Code**별 **TOP 10 유망
 타겟시장 11대 명세 분석표**, **`{home_country}` 포지션 벤치마크**, **신시장 개척 TOP 5**, **적정 수출단가 산출**,
-그리고 **[TOP 5 실전 무역 고도화 패키지]**를 산출한 EDA 보고서입니다.
+**삼국무역(중계무역) 후보 매트릭스**, 그리고 **[TOP 5 실전 무역 고도화 패키지]**를 산출한 EDA 보고서입니다.
 
 {caveats_md}
 
@@ -1272,6 +1350,15 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 ## 💰 적정 수출단가(Target Price) 산출
 
 {price_band_md}
+
+---
+
+## 🔀 삼국무역(중계무역) 후보 매트릭스 — B국 소싱 → C/D국 판매
+
+`{home_country}` 소싱이 여의치 않을 경우를 대비한 대안 전략입니다. `{home_country}`가 거래에 직접
+끼지 않고, 대체 소싱국(B)의 물건을 타겟시장(C/D)에 중개하는 조합을 마진갭 기준으로 자동 랭킹합니다.
+
+{triangular_md}
 
 ---
 
