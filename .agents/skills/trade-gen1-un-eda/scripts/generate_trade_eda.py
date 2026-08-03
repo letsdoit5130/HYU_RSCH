@@ -313,8 +313,11 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
         )
 
     # ---- 자국(home_country) 벤치마크: exp_df 직접 신고 우선, 없으면 imp_df 미러로 대체 추정 ----
+    # home_source_df/home_dest_col은 HS Code별 정밀 가격 전략 산출 시 재필터링하기 위해 별도로 보존한다.
     home_by = None
     home_source_note = None
+    home_source_df = None
+    home_dest_col = None
     if not exp_df.empty and reporter_col in exp_df.columns:
         home_mask = exp_df[reporter_col].astype(str).str.contains(home_country, case=False, na=False)
         home_exp = exp_df[home_mask]
@@ -323,12 +326,14 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 
     if not home_exp.empty:
         home_by = home_exp.groupby(partner_col)  # partner = 수출 목적지
+        home_source_df, home_dest_col = home_exp, partner_col
         home_source_note = f"`{home_country}`가 스스로 신고한 Export 데이터 기준 (직접 신고)."
     else:
         mirror_mask = imp_df[partner_col].astype(str).str.contains(home_country, case=False, na=False)
         home_mirror = imp_df[mirror_mask]
         if not home_mirror.empty:
             home_by = home_mirror.groupby(reporter_col)  # reporter = 상대국(수입국) = 목적지
+            home_source_df, home_dest_col = home_mirror, reporter_col
             home_source_note = (
                 f"`{home_country}` 자체 Export 신고가 없어, 상대국들이 \"`{home_country}`에서 수입했다\"고 "
                 "신고한 Import 미러 데이터로 대체 추정한 결과입니다 (mirror statistics)."
@@ -975,92 +980,184 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
     market_3star_text = build_market_strategy()
 
     # =====================================================================
-    # (신규) home_country 포지션 벤치마크 표
+    # (신규) home_country 벤치마크 / 신시장 TOP5 / 적정단가 / 삼국무역 —
+    # 전부 HS Code별로 산출한다. 서로 다른 성격의 상품(예: 생물/냉동 vs 가공/건조)이
+    # 블렌딩되면 단가가 심하게 왜곡되므로(라이브 스캘럽 $6/kg vs 건조 $500+/kg 등),
+    # 무역액 기준 TOP N개 HS Code 각각에 대해 독립적으로 타겟시장·단가를 다시 계산한다.
     # =====================================================================
-    if home_by is not None and home_destinations:
-        home_rows = []
-        for dest, sub in home_by:
-            if dest in EXCLUDE_AGG:
+    TOP_N_NEW_MARKET = 5
+    TOP_N_PRICE_HS = min(3, len(top_hs_list)) if top_hs_list else 0
+
+    home_benchmark_blocks, unexplored_blocks, price_band_blocks, triangular_blocks = [], [], [], []
+
+    for hs_code in top_hs_list[:TOP_N_PRICE_HS]:
+        hs_label = f"HS {hs_code} ({hs_desc(hs_code)[:40]})"
+        imp_hs = imp_df_ranked[imp_df_ranked['hs_clean'] == hs_code]
+        exp_hs = exp_df[exp_df['hs_clean'] == hs_code] if not exp_df.empty else exp_df
+
+        mkt_grp_hs = imp_hs.groupby(reporter_col)['clean_value'].agg(sum_million=lambda x: x.sum() / 1e6, count='count')
+        mkt_grp_hs = mkt_grp_hs[~mkt_grp_hs.index.isin(EXCLUDE_TARGET)].sort_values(by='sum_million', ascending=False)
+        top_market_hs = mkt_grp_hs.head(10)
+
+        if exp_reporter_multi and not exp_hs.empty:
+            comp_grp_hs = exp_hs.groupby(reporter_col)['clean_value'].agg(sum_million=lambda x: x.sum() / 1e6, count='count')
+        else:
+            comp_grp_hs = imp_hs.groupby(partner_col)['clean_value'].agg(sum_million=lambda x: x.sum() / 1e6, count='count')
+        comp_grp_hs = comp_grp_hs[~comp_grp_hs.index.isin(EXCLUDE_AGG)].sort_values(by='sum_million', ascending=False).head(10)
+
+        home_by_hs = None
+        if home_source_df is not None:
+            home_src_hs = home_source_df[home_source_df['hs_clean'] == hs_code]
+            if not home_src_hs.empty:
+                home_by_hs = home_src_hs.groupby(home_dest_col)
+        home_dest_hs = set(home_by_hs.groups.keys()) if home_by_hs is not None else set()
+
+        # -- home_country 벤치마크 (이 HS Code 한정) --
+        if home_by_hs is not None and home_dest_hs:
+            rows = []
+            for dest, sub in home_by_hs:
+                if dest in EXCLUDE_AGG:
+                    continue
+                val_sum = sub['clean_value'].sum()
+                price_avg = sub['unit_price'].replace([np.inf, -np.inf], np.nan).dropna().mean()
+                cagr_txt = "-"
+                if year_col:
+                    yv = sub.groupby(year_col)['clean_value'].sum()
+                    if len(yv) >= 2:
+                        n_years = yv.index.max() - yv.index.min()
+                        c = cagr_pct(yv.iloc[0], yv.iloc[-1], n_years)
+                        cagr_txt = f"{c:.1f}%" if pd.notna(c) else "-"
+                rows.append({
+                    '목적지': flag_hub(dest),
+                    f'{home_country} 수출액($M)': round(val_sum / 1e6, 2),
+                    '평균단가($/kg)': round(price_avg, 1) if pd.notna(price_avg) else '산출불가',
+                    'CAGR': cagr_txt,
+                })
+            bench_df = pd.DataFrame(rows).sort_values(by=f'{home_country} 수출액($M)', ascending=False).head(10).set_index('목적지')
+            home_benchmark_blocks.append(f"#### 📦 [{hs_label}]\n\n{df_to_md(bench_df)}")
+        else:
+            home_benchmark_blocks.append(f"#### 📦 [{hs_label}]\n\n이 HS Code에 대한 `{home_country}` 수출 실적 데이터가 없습니다.")
+
+        # -- 신시장 TOP5 (이 HS Code 한정) --
+        unexplored_all_hs = [m for m in top_market_hs.index if m not in home_dest_hs]
+        unexplored_hs = unexplored_all_hs[:TOP_N_NEW_MARKET]
+        if unexplored_hs:
+            rows = []
+            for m in unexplored_hs:
+                sub_m = imp_hs[imp_hs[reporter_col] == m]
+                supplier_val = sub_m.groupby(partner_col)['clean_value'].sum()
+                supplier_val = supplier_val[~supplier_val.index.isin(EXCLUDE_AGG)]
+                tot = supplier_val.sum()
+                if tot > 0 and not supplier_val.empty:
+                    hhi_val = ((supplier_val / tot) ** 2).sum() * 10000
+                    top_sup = supplier_val.sort_values(ascending=False).index[0]
+                else:
+                    hhi_val, top_sup = np.nan, None
+                rows.append({
+                    '신시장 후보': flag_hub(m),
+                    '시장규모($M)': round(top_market_hs.loc[m, 'sum_million'], 1),
+                    '현재 최대 공급국': flag_hub(top_sup) if top_sup else '확인불가',
+                    '공급국 집중도(HHI)': round(hhi_val, 0) if pd.notna(hhi_val) else '확인불가',
+                })
+            remaining_n_hs = len(unexplored_all_hs) - len(unexplored_hs)
+            note = f" (이 외 {remaining_n_hs}곳 추가 존재)" if remaining_n_hs > 0 else ""
+            unexplored_blocks.append(f"#### 📦 [{hs_label}]{note}\n\n{df_to_md(pd.DataFrame(rows).set_index('신시장 후보'))}")
+        else:
+            unexplored_blocks.append(f"#### 📦 [{hs_label}]\n\n이 HS Code의 TOP 유망 타겟시장 전부에서 `{home_country}` 실적이 확인되어 신시장 후보가 없습니다.")
+
+        # -- 적정 수출단가 (이 HS Code 한정) --
+        rows = []
+        for m in top_market_hs.head(8).index:
+            sub_m = imp_hs[imp_hs[reporter_col] == m]
+            prices = sub_m['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+            if prices.empty:
                 continue
-            val_sum = sub['clean_value'].sum()
-            price_avg = sub['unit_price'].replace([np.inf, -np.inf], np.nan).dropna().mean()
-            cagr_txt = "-"
-            if year_col:
-                yv = sub.groupby(year_col)['clean_value'].sum()
-                if len(yv) >= 2:
-                    n_years = yv.index.max() - yv.index.min()
-                    c = cagr_pct(yv.iloc[0], yv.iloc[-1], n_years)
-                    cagr_txt = f"{c:.1f}%" if pd.notna(c) else "-"
-            home_rows.append({
-                '목적지': flag_hub(dest),
-                f'{home_country} 수출액($M)': round(val_sum / 1e6, 2),
-                '평균단가($/kg)': round(price_avg, 1) if pd.notna(price_avg) else '산출불가',
-                'CAGR': cagr_txt,
+            mkt_avg, mkt_std = prices.mean(), prices.std(ddof=0)
+            home_val = np.nan
+            if home_by_hs is not None and m in home_by_hs.groups:
+                hp = home_by_hs.get_group(m)['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+                if not hp.empty:
+                    home_val = hp.mean()
+            low, high = max(mkt_avg - (mkt_std or 0), 0), mkt_avg + (mkt_std or 0)
+            position_txt = "데이터 없음(미개척 또는 미러 없음)"
+            if pd.notna(home_val) and mkt_avg > 0:
+                diff_pct = (home_val - mkt_avg) / mkt_avg * 100
+                position_txt = f"{'▲시장평균보다 비쌈' if diff_pct > 0 else '▼시장평균보다 저렴'} ({diff_pct:+.0f}%)"
+            rows.append({
+                '타겟시장': flag_hub(m),
+                '시장평균 수입단가($/kg)': round(mkt_avg, 1),
+                '권장 오퍼밴드($/kg)': f"${low:.1f} ~ ${high:.1f}",
+                f'{home_country} 현재단가($/kg)': round(home_val, 1) if pd.notna(home_val) else '데이터없음',
+                '포지션': position_txt,
             })
-        home_bench_df = pd.DataFrame(home_rows).sort_values(by=f'{home_country} 수출액($M)', ascending=False).head(15).set_index('목적지')
-        home_benchmark_md = df_to_md(home_bench_df) + f"\n\n{home_source_note}"
+        if rows:
+            price_band_blocks.append(f"#### 📦 [{hs_label}]\n\n{df_to_md(pd.DataFrame(rows).set_index('타겟시장'))}")
+        else:
+            price_band_blocks.append(f"#### 📦 [{hs_label}]\n\n적정단가를 산출할 수 있는 유효 데이터가 부족합니다.")
+
+        # -- 삼국무역 (이 HS Code 한정) --
+        def origin_price_hs(country, _exp_hs=exp_hs, _imp_hs=imp_hs):
+            if exp_reporter_multi and not _exp_hs.empty and country in _exp_hs[reporter_col].values:
+                p = _exp_hs[_exp_hs[reporter_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+                if not p.empty:
+                    return p.mean(), '직접신고(FOB)'
+            p2 = _imp_hs[_imp_hs[partner_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+            if not p2.empty:
+                return p2.mean(), '간접추정(상대국 CIF 기준)'
+            return np.nan, None
+
+        def supplier_share_hs(market, supplier, _imp_hs=imp_hs):
+            sub_m = _imp_hs[_imp_hs[reporter_col] == market]
+            tot = sub_m['clean_value'].sum()
+            if tot <= 0:
+                return np.nan
+            sup_val = sub_m[sub_m[partner_col] == supplier]['clean_value'].sum()
+            return sup_val / tot * 100
+
+        tri_B_hs = [c for c in comp_grp_hs.index if c not in home_match_names][:5]
+        tri_C_hs = list(top_market_hs.index)[:5]
+        tri_rows_hs = []
+        for b in tri_B_hs:
+            b_price, b_conf = origin_price_hs(b)
+            if pd.isna(b_price) or b_price <= 0:
+                continue
+            for c in tri_C_hs:
+                if b == c:
+                    continue
+                c_prices = imp_hs[imp_hs[reporter_col] == c]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
+                if c_prices.empty:
+                    continue
+                c_price = c_prices.mean()
+                margin_pct = (c_price - b_price) / b_price * 100
+                b_share = supplier_share_hs(c, b)
+                if pd.isna(b_share) or b_share < 5:
+                    verdict = '🟢 화이트스페이스(B 미진출)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
+                else:
+                    verdict = f'🟡 이미 B 진출({b_share:.0f}%)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
+                tri_rows_hs.append({
+                    'B(소싱국)': flag_hub(b),
+                    'C/D(판매국)': flag_hub(c),
+                    f'B 판매단가($/kg, {b_conf})': round(b_price, 1),
+                    'C/D 시장평균단가($/kg)': round(c_price, 1),
+                    '마진갭(%)': round(margin_pct, 0),
+                    'B의 현재 C/D 점유율(%)': round(b_share, 1) if pd.notna(b_share) else '0(미진출)',
+                    '판정': verdict,
+                })
+        if tri_rows_hs:
+            tri_df_hs = pd.DataFrame(tri_rows_hs).sort_values(by='마진갭(%)', ascending=False).head(8)
+            triangular_blocks.append(f"#### 📦 [{hs_label}]\n\n{df_to_md(tri_df_hs.set_index(['B(소싱국)', 'C/D(판매국)']))}")
+        else:
+            triangular_blocks.append(f"#### 📦 [{hs_label}]\n\n삼국무역 후보를 산출할 수 있는 데이터가 부족합니다.")
+
+    if home_benchmark_blocks:
+        home_benchmark_md = "\n\n".join(home_benchmark_blocks) + f"\n\n{home_source_note}"
     else:
         home_benchmark_md = f"데이터 없음. {home_source_note or ''}"
 
-    # =====================================================================
-    # (신규) 신시장 개척 TOP 5 — 유망 타겟시장 중 home_country 실적이 없는 곳을
-    # 시장규모 순으로 최대 5개까지 선정 (top_market_df가 이미 시장규모 내림차순이므로
-    # 순서 그대로 head(5)만 취하면 됨)
-    # =====================================================================
-    TOP_N_NEW_MARKET = 5
-    unexplored_markets_all = [m for m in top_market_df.index if m not in home_destinations]
-    unexplored_markets = unexplored_markets_all[:TOP_N_NEW_MARKET]
-    if unexplored_markets:
-        unexplored_rows = []
-        for m in unexplored_markets:
-            hhi_val, top_sup = market_supplier_hhi(m)
-            unexplored_rows.append({
-                '신시장 후보': flag_hub(m),
-                '시장규모($M)': round(top_market_df.loc[m, 'sum_million'], 1),
-                '현재 최대 공급국': flag_hub(top_sup) if top_sup else '확인불가',
-                '공급국 집중도(HHI)': round(hhi_val, 0) if pd.notna(hhi_val) else '확인불가',
-            })
-        unexplored_md = df_to_md(pd.DataFrame(unexplored_rows).set_index('신시장 후보'))
-        remaining_n = len(unexplored_markets_all) - len(unexplored_markets)
-        remaining_note = f" (이 외에도 시장규모 기준 하위 미개척 시장 {remaining_n}곳 추가 존재)" if remaining_n > 0 else ""
-        unexplored_md += (
-            f"\n\n> 위 5곳은 TOP 유망 타겟시장 중 `{home_country}`의 수출 실적이 (직접 신고 또는 미러 데이터 기준) "
-            f"확인되지 않은 곳을 시장규모 순으로 선정한 것입니다{remaining_note}. HHI가 낮을수록(공급국이 "
-            "분산돼 있을수록) 신규 진입 장벽이 상대적으로 낮습니다."
-        )
-    else:
-        unexplored_md = f"TOP 유망 타겟시장 전부에서 `{home_country}`의 수출 실적이 확인되어, 별도의 신시장 후보가 없습니다."
+    unexplored_md = "\n\n".join(unexplored_blocks) if unexplored_blocks else "산출 가능한 HS Code가 없습니다."
 
-    # =====================================================================
-    # (신규) 적정 수출단가(Target Price) 산출 표
-    # =====================================================================
-    price_rows = []
-    for m in top_market_df.head(8).index:
-        sub = imp_df_ranked[imp_df_ranked[reporter_col] == m]
-        prices = sub['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
-        if prices.empty:
-            continue
-        mkt_avg, mkt_std = prices.mean(), prices.std(ddof=0)
-        home_val = np.nan
-        if home_by is not None and m in home_by.groups:
-            hp = home_by.get_group(m)['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
-            if not hp.empty:
-                home_val = hp.mean()
-        low, high = max(mkt_avg - (mkt_std or 0), 0), mkt_avg + (mkt_std or 0)
-        position_txt = "데이터 없음(미개척 또는 미러 없음)"
-        if pd.notna(home_val) and mkt_avg > 0:
-            diff_pct = (home_val - mkt_avg) / mkt_avg * 100
-            position_txt = f"{'▲시장평균보다 비쌈' if diff_pct > 0 else '▼시장평균보다 저렴'} ({diff_pct:+.0f}%)"
-        price_rows.append({
-            '타겟시장': flag_hub(m),
-            '시장평균 수입단가($/kg)': round(mkt_avg, 1),
-            '권장 오퍼밴드($/kg)': f"${low:.1f} ~ ${high:.1f}",
-            f'{home_country} 현재단가($/kg)': round(home_val, 1) if pd.notna(home_val) else '데이터없음',
-            '포지션': position_txt,
-        })
-    if price_rows:
-        price_band_md = df_to_md(pd.DataFrame(price_rows).set_index('타겟시장'))
-        price_band_md += (
+    if price_band_blocks:
+        price_band_md = "\n\n".join(price_band_blocks) + (
             "\n\n> 권장 오퍼밴드는 해당 시장의 수입단가 평균 ± 표준편차 구간입니다. "
             f"`{home_country}` 현재단가가 이 구간보다 높으면 인증/품질/브랜드로 프리미엄을 정당화해야 하고, "
             "낮으면 원가 경쟁력을 활용한 물량 확대 전략이 유리합니다. `primaryValue`는 Comtrade 정의상 "
@@ -1069,77 +1166,14 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
     else:
         price_band_md = "적정단가를 산출할 수 있는 유효 데이터가 부족합니다."
 
-    # =====================================================================
-    # (신규) 삼국무역(중계무역) 후보 매트릭스
-    # home_country(A국) 소싱이 여의치 않을 때, 대체 소싱국(B) → 판매 타겟국(C/D)
-    # 조합을 마진갭 기준으로 자동 랭킹한다. home_country는 이 거래에 끼지 않으므로
-    # B/C/D 후보 모두에서 제외한다.
-    # =====================================================================
-    def origin_price_estimate(country):
-        """country의 평균 판매(수출)단가 추정치와 신뢰도 라벨을 반환.
-        Export가 reporter=all로 직접 신고돼 있으면 그 값을, 아니면 상대국들이
-        '이 나라에서 수입했다'고 신고한 Import 미러 단가로 근사한다."""
-        if exp_reporter_multi and country in exp_df[reporter_col].values:
-            p = exp_df[exp_df[reporter_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
-            if not p.empty:
-                return p.mean(), '직접신고(FOB)'
-        p2 = imp_df_ranked[imp_df_ranked[partner_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
-        if not p2.empty:
-            return p2.mean(), '간접추정(상대국 CIF 기준)'
-        return np.nan, None
-
-    def supplier_share_in_market(market, supplier):
-        sub = imp_df_ranked[imp_df_ranked[reporter_col] == market]
-        tot = sub['clean_value'].sum()
-        if tot <= 0:
-            return np.nan
-        sup_val = sub[sub[partner_col] == supplier]['clean_value'].sum()
-        return sup_val / tot * 100
-
-    triangular_B = [c for c in comp_grp.index if c not in home_match_names][:5]
-    triangular_C = [m for m in top_market_df.index][:5]
-
-    tri_rows = []
-    for b in triangular_B:
-        b_price, b_conf = origin_price_estimate(b)
-        if pd.isna(b_price) or b_price <= 0:
-            continue
-        for c in triangular_C:
-            if b == c:
-                continue
-            c_sub = imp_df_ranked[imp_df_ranked[reporter_col] == c]
-            c_prices = c_sub['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
-            if c_prices.empty:
-                continue
-            c_price = c_prices.mean()
-            margin_pct = (c_price - b_price) / b_price * 100
-            b_share = supplier_share_in_market(c, b)
-            if pd.isna(b_share) or b_share < 5:
-                verdict = '🟢 화이트스페이스(B 미진출)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
-            else:
-                verdict = f'🟡 이미 B 진출({b_share:.0f}%)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
-            tri_rows.append({
-                'B(소싱국)': flag_hub(b),
-                'C/D(판매국)': flag_hub(c),
-                f'B 판매단가($/kg, {b_conf})': round(b_price, 1),
-                'C/D 시장평균단가($/kg)': round(c_price, 1),
-                '마진갭(%)': round(margin_pct, 0),
-                'B의 현재 C/D 점유율(%)': round(b_share, 1) if pd.notna(b_share) else '0(미진출)',
-                '판정': verdict,
-            })
-
-    if tri_rows:
-        tri_df = pd.DataFrame(tri_rows).sort_values(by='마진갭(%)', ascending=False).head(10)
-        triangular_md = df_to_md(tri_df.set_index(['B(소싱국)', 'C/D(판매국)']))
-        triangular_md += (
+    if triangular_blocks:
+        triangular_md = "\n\n".join(triangular_blocks) + (
             "\n\n> ⚠️ **반드시 확인 후 실행**: 위 표는 무역통계상 가격 갭만 보여줄 뿐, 실제 기회는 대부분 "
             "① B-C/D 간 신용/금융 공백, ② MOQ 미스매치, ③ 신뢰 중개 필요성에서 나옵니다 — 가격 갭만 "
             "보고 뛰어들면 이미 B가 직접 더 싸게 팔고 있는 시장일 수 있습니다. 또한 (1) 한국이 거래에 "
             f"끼지 않으므로 한국 FTA 협정세율이 전혀 적용되지 않고, (2) 외국환거래법상 **중계무역**은 "
             "일반 수출과 다른 별도 신고 절차(외국인수수입/외국인도수출)와 K-SURE 상품이 필요하며, "
-            "(3) B/C/D가 제재 대상국인지 반드시 사전 확인해야 합니다. (4) 위 단가는 데이터셋에 포함된 "
-            "전체 HS Code를 블렌딩한 평균입니다 — 광범위한 catch-all 코드가 섞여 있으면 왜곡될 수 있으니 "
-            "위 \"TOP HS Code별 유망 타겟시장 11대 명세 표\"의 HS Code별 단가와 교차 확인하세요."
+            "(3) B/C/D가 제재 대상국인지 반드시 사전 확인해야 합니다."
         )
     else:
         triangular_md = (
@@ -1336,27 +1370,30 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 ## 🇰🇷 {home_country} 포지션 벤치마크 (실측)
 
 {home_country}가 현재 어느 시장에 실제로 얼마나, 어떤 단가로 수출하고 있는지의 벤치마크입니다.
+품목마다 성격(가공/생물/건조 등)과 단가대가 달라 블렌디드 평균은 왜곡될 수 있으므로, 무역액 기준
+TOP {TOP_N_PRICE_HS}개 HS Code별로 각각 산출합니다.
 
 {home_benchmark_md}
 
 ---
 
-## 🆕 신시장 개척 TOP 5 (유망 타겟시장 중 {home_country} 미진출 상위 5개국)
+## 🆕 신시장 개척 TOP 5 (HS Code별, {home_country} 미진출 상위 시장)
 
 {unexplored_md}
 
 ---
 
-## 💰 적정 수출단가(Target Price) 산출
+## 💰 적정 수출단가(Target Price) 산출 (HS Code별)
 
 {price_band_md}
 
 ---
 
-## 🔀 삼국무역(중계무역) 후보 매트릭스 — B국 소싱 → C/D국 판매
+## 🔀 삼국무역(중계무역) 후보 매트릭스 — B국 소싱 → C/D국 판매 (HS Code별)
 
 `{home_country}` 소싱이 여의치 않을 경우를 대비한 대안 전략입니다. `{home_country}`가 거래에 직접
 끼지 않고, 대체 소싱국(B)의 물건을 타겟시장(C/D)에 중개하는 조합을 마진갭 기준으로 자동 랭킹합니다.
+B의 판매단가·C/D의 시장평균단가 모두 아래 HS Code로 한정해 산출했습니다.
 
 {triangular_md}
 
