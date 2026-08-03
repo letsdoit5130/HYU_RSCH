@@ -1,13 +1,13 @@
 ---
 name: trade-gen1-un-eda
-description: UN Comtrade 등 무역 통계 CSV 데이터를 기반으로 범용 EDA 리포트, 17개 시각화 차트, 자국(--home_country) 수출 포지션 벤치마크, 미개척 시장 후보, 적정 수출단가 산출, 1인 상사 시장개척 전략 및 HS Code별 TOP 10 유망 타겟시장 분석표를 자동 생성하는 스킬입니다. 무역 데이터, UN Comtrade CSV, EDA 리포트 자동 생성 요청 시 활성화됩니다.
+description: UN Comtrade 등 무역 통계 CSV 데이터를 기반으로 범용 EDA 리포트, 17개 시각화 차트, 자국(--home_country) 수출 포지션 벤치마크, 신시장 개척 TOP 5, 적정 수출단가 산출, 1인 상사 시장개척 전략 및 HS Code별 TOP 10 유망 타겟시장 분석표를 자동 생성하는 스킬입니다. 무역 데이터, UN Comtrade CSV, EDA 리포트 자동 생성 요청 시 활성화됩니다.
 ---
 
 # 📊 Trade EDA Generator (범용 무역 데이터 EDA 리포트 생성 스킬)
 
 이 스크립트는 UN Comtrade 또는 무역 통계 데이터 CSV 파일이 주어졌을 때, 1인 종합상사 창업자 시각에서
 **다차원 통계 분석, 17개 시각화 차트 PNG 저장, 무역액 기준 동적 산출 TOP 10 HS Code별 TOP 10 유망
-타겟시장 분석표, 자국 수출 포지션 벤치마크, 미개척 시장 후보, 적정 수출단가 산출, 바이어 전략 부록이
+타겟시장 분석표, 자국 수출 포지션 벤치마크, 신시장 개척 TOP 5, 적정 수출단가 산출, 바이어 전략 부록이
 결합된 종합 EDA 보고서를 자동으로 완벽 생성**합니다.
 
 ---
@@ -96,8 +96,8 @@ uv run python .agents/skills/trade-gen1-un-eda/scripts/generate_trade_eda.py \
 3. **17개 다차원 시각화 차트 및 통계 인사이트 해설**
 4. **`--home_country` 포지션 벤치마크 (신규)**: 자국이 실제로 어느 목적지에 얼마나, 어떤 단가로,
    얼마의 CAGR로 수출하고 있는지 (직접 신고 우선, 없으면 상대국 Import 미러 데이터로 대체 추정)
-5. **미개척 시장 후보 (신규)**: TOP 유망 타겟시장 중 `--home_country` 수출 실적이 없는 곳 + 그
-   시장의 공급국 집중도(HHI)
+5. **신시장 개척 TOP 5 (신규)**: TOP 유망 타겟시장 중 `--home_country` 수출 실적이 없는 곳을
+   시장규모 순으로 최대 5개 선정 + 그 시장의 공급국 집중도(HHI)
 6. **적정 수출단가(Target Price) 산출 (신규)**: 타겟시장별 시장평균 수입단가, 권장 오퍼밴드(평균±표준편차),
    `--home_country` 현재단가와의 포지션 비교. `primaryValue`는 Comtrade 정의상 Export 행=FOB,
    Import 행=CIF 값이 이미 반영돼 있어 별도 환산 없이 그대로 비교합니다.

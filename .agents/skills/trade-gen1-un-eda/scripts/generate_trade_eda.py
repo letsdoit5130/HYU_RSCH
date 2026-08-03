@@ -1,7 +1,7 @@
 """
 UN Comtrade 등 무역 통계 CSV를 입력받아 17개 데이터 기반 시각화 차트와
 TOP 10 HS Code별 TOP 10 유망 타겟시장 11대 명세 분석표, 자국(--home_country) 수출
-포지션 벤치마크, 미개척 시장 후보, 적정 수출단가 산출, 1인 상사 시장개척 전략을
+포지션 벤치마크, 신시장 개척 TOP 5, 적정 수출단가 산출, 1인 상사 시장개척 전략을
 자동 산출하는 범용 무역 EDA 엔진.
 
 설계 원칙:
@@ -1003,26 +1003,33 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
         home_benchmark_md = f"데이터 없음. {home_source_note or ''}"
 
     # =====================================================================
-    # (신규) 미개척 시장 후보 리스트
+    # (신규) 신시장 개척 TOP 5 — 유망 타겟시장 중 home_country 실적이 없는 곳을
+    # 시장규모 순으로 최대 5개까지 선정 (top_market_df가 이미 시장규모 내림차순이므로
+    # 순서 그대로 head(5)만 취하면 됨)
     # =====================================================================
-    unexplored_markets = [m for m in top_market_df.index if m not in home_destinations]
+    TOP_N_NEW_MARKET = 5
+    unexplored_markets_all = [m for m in top_market_df.index if m not in home_destinations]
+    unexplored_markets = unexplored_markets_all[:TOP_N_NEW_MARKET]
     if unexplored_markets:
         unexplored_rows = []
         for m in unexplored_markets:
             hhi_val, top_sup = market_supplier_hhi(m)
             unexplored_rows.append({
-                '타겟시장': flag_hub(m),
+                '신시장 후보': flag_hub(m),
                 '시장규모($M)': round(top_market_df.loc[m, 'sum_million'], 1),
                 '현재 최대 공급국': flag_hub(top_sup) if top_sup else '확인불가',
                 '공급국 집중도(HHI)': round(hhi_val, 0) if pd.notna(hhi_val) else '확인불가',
             })
-        unexplored_md = df_to_md(pd.DataFrame(unexplored_rows).set_index('타겟시장'))
+        unexplored_md = df_to_md(pd.DataFrame(unexplored_rows).set_index('신시장 후보'))
+        remaining_n = len(unexplored_markets_all) - len(unexplored_markets)
+        remaining_note = f" (이 외에도 시장규모 기준 하위 미개척 시장 {remaining_n}곳 추가 존재)" if remaining_n > 0 else ""
         unexplored_md += (
-            f"\n\n> 위 시장은 TOP 유망 타겟시장 중 `{home_country}`의 수출 실적이 (직접 신고 또는 미러 데이터 기준) "
-            "확인되지 않은 곳입니다. HHI가 낮을수록(공급국이 분산돼 있을수록) 신규 진입 장벽이 상대적으로 낮습니다."
+            f"\n\n> 위 5곳은 TOP 유망 타겟시장 중 `{home_country}`의 수출 실적이 (직접 신고 또는 미러 데이터 기준) "
+            f"확인되지 않은 곳을 시장규모 순으로 선정한 것입니다{remaining_note}. HHI가 낮을수록(공급국이 "
+            "분산돼 있을수록) 신규 진입 장벽이 상대적으로 낮습니다."
         )
     else:
-        unexplored_md = f"TOP 유망 타겟시장 전부에서 `{home_country}`의 수출 실적이 확인되어, 별도의 미개척 시장 후보가 없습니다."
+        unexplored_md = f"TOP 유망 타겟시장 전부에서 `{home_country}`의 수출 실적이 확인되어, 별도의 신시장 후보가 없습니다."
 
     # =====================================================================
     # (신규) 적정 수출단가(Target Price) 산출 표
@@ -1140,7 +1147,7 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 
 본 리포트는 `{input_basename}` {clean_item} 무역 데이터셋(총 {total_rec:,}행)을 대상으로 데이터 기반
 **1인 종합상사 최적 개척 시장 3선 전략**, 무역액 기준 **동적 산출 TOP {TOP_N_HS} HS Code**별 **TOP 10 유망
-타겟시장 11대 명세 분석표**, **`{home_country}` 포지션 벤치마크**, **미개척 시장 후보**, **적정 수출단가 산출**,
+타겟시장 11대 명세 분석표**, **`{home_country}` 포지션 벤치마크**, **신시장 개척 TOP 5**, **적정 수출단가 산출**,
 그리고 **[TOP 5 실전 무역 고도화 패키지]**를 산출한 EDA 보고서입니다.
 
 {caveats_md}
@@ -1256,7 +1263,7 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 
 ---
 
-## 🆕 미개척 시장 후보 (TOP 유망 타겟시장 중 {home_country} 실적 없음)
+## 🆕 신시장 개척 TOP 5 (유망 타겟시장 중 {home_country} 미진출 상위 5개국)
 
 {unexplored_md}
 
