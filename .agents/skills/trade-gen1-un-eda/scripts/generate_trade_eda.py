@@ -991,6 +991,7 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
     TOP_N_PRICE_HS = min(3, len(top_hs_list)) if top_hs_list else 0
 
     home_benchmark_blocks, unexplored_blocks, price_band_blocks, triangular_blocks = [], [], [], []
+    all_tri_candidates = []  # HS Code 전체를 통틀어 "우선 개척 조합 3선" 선정용
 
     for hs_code in top_hs_list[:TOP_N_PRICE_HS]:
         hs_label = f"HS {hs_code} ({hs_desc(hs_code)[:40]})"
@@ -1136,7 +1137,7 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                     verdict = '🟢 화이트스페이스(B 미진출)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
                 else:
                     verdict = f'🟡 이미 B 진출({b_share:.0f}%)' if margin_pct > 0 else '⚠️ 마진 근거 부족'
-                tri_rows_hs.append({
+                row = {
                     'B(소싱국)': flag_hub(b),
                     'C/D(판매국)': flag_hub(c),
                     f'B 판매단가($/kg, {b_conf})': round(b_price, 1),
@@ -1144,6 +1145,21 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                     '마진갭(%)': round(margin_pct, 0),
                     'B의 현재 C/D 점유율(%)': round(b_share, 1) if pd.notna(b_share) else '0(미진출)',
                     '판정': verdict,
+                }
+                tri_rows_hs.append(row)
+                all_tri_candidates.append({
+                    **row,
+                    '_hs_code': hs_code,
+                    '_hs_label': hs_label,
+                    '_b_raw': b,
+                    '_c_raw': c,
+                    '_margin_raw': margin_pct,
+                    '_is_whitespace': verdict.startswith('🟢'),
+                    '_c_market_size': top_market_hs.loc[c, 'sum_million'] if c in top_market_hs.index else 0,
+                    '_b_price': round(b_price, 1),
+                    '_b_conf': b_conf,
+                    '_c_price': round(c_price, 1),
+                    '_b_share': round(b_share, 1) if pd.notna(b_share) else 0,
                 })
         if tri_rows_hs:
             tri_df_hs = pd.DataFrame(tri_rows_hs).sort_values(by='마진갭(%)', ascending=False).head(8)
@@ -1182,6 +1198,49 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
             "삼국무역 후보를 산출할 수 있는 데이터가 부족합니다 (경쟁 수출국/타겟시장 단가 데이터 필요). "
             "Export를 `reporter=all`로 수집하면 B의 판매단가가 간접추정이 아닌 직접신고 기준으로 정확해집니다."
         )
+
+    # =====================================================================
+    # (신규) 삼국무역 우선 개척 조합 3선 — "1인 종합상사 최적 우선 개척 시장 3선"과
+    # 같은 톤으로, 전체 HS Code를 통틀어 가장 유망한 B→C/D 조합 3개를 뽑아 요약한다.
+    # =====================================================================
+    if all_tri_candidates:
+        tri_all_df = pd.DataFrame(all_tri_candidates)
+        used_keys = []
+
+        def take_top(df_pool):
+            pool = df_pool[~df_pool.apply(lambda r: (r['_b_raw'], r['_c_raw'], r['_hs_code']) in used_keys, axis=1)]
+            if pool.empty:
+                return None
+            row = pool.iloc[0]
+            used_keys.append((row['_b_raw'], row['_c_raw'], row['_hs_code']))
+            return row
+
+        pick1 = take_top(tri_all_df.sort_values(by='_margin_raw', ascending=False))
+        pick2 = take_top(tri_all_df[tri_all_df['_is_whitespace']].sort_values(by='_margin_raw', ascending=False))
+        pick3 = take_top(tri_all_df[tri_all_df['_margin_raw'] > 0].sort_values(by='_c_market_size', ascending=False))
+
+        def fmt_pick(row, label, reason):
+            if row is None:
+                return f"### {label}\n- 선정 가능한 조합이 없습니다 (후보 데이터 부족)."
+            return (
+                f"### {label}: {row['B(소싱국)']} → {row['C/D(판매국)']} — [{row['_hs_label']}]\n"
+                f"- **선정 근거**: {reason} (마진갭 {row['마진갭(%)']:.0f}%, B 판매단가 ${row['_b_price']}/kg[{row['_b_conf']}], "
+                f"C/D 시장평균단가 ${row['_c_price']}/kg, B의 현재 C/D 점유율 {row['_b_share']}%)\n"
+                f"- **판정**: {row['판정']}"
+            )
+
+        tri_top3_text = "\n\n".join([
+            fmt_pick(pick1, "① 조합 1 — 최대 마진갭", "전체 HS Code를 통틀어 마진갭이 가장 큰 조합입니다."),
+            fmt_pick(pick2, "② 조합 2 — 화이트스페이스 최우선", "B가 아직 진출하지 않은(공급 점유율 5% 미만) 조합 중 마진갭이 가장 커, 경쟁 없이 진입 가능한 조합입니다."),
+            fmt_pick(pick3, "③ 조합 3 — 대형 시장 안정성", "마진갭이 확보되면서 C/D 목표시장 규모(수입 총액)가 가장 커, 안정적 물량 확보에 유리한 조합입니다."),
+        ])
+        tri_top3_text += (
+            "\n\n> ⚠️ 위 3선도 결국 무역통계상 가격 갭일 뿐입니다. 실행 전 신용/금융 공백, MOQ, 신뢰 중개 "
+            "필요성, FTA 미적용, 중계무역 신고 절차, 제재 대상국 여부를 반드시 확인하세요 (상세는 아래 HS Code별 "
+            "전체 표 하단 고지 참고)."
+        )
+    else:
+        tri_top3_text = "삼국무역 우선 개척 조합을 선정할 수 있는 데이터가 부족합니다."
 
     # =====================================================================
     # TOP 5 실전 무역 고도화 패키지 (품목 파라미터화)
@@ -1396,6 +1455,12 @@ TOP {TOP_N_PRICE_HS}개 HS Code별로 각각 산출합니다.
 `{home_country}` 소싱이 여의치 않을 경우를 대비한 대안 전략입니다. `{home_country}`가 거래에 직접
 끼지 않고, 대체 소싱국(B)의 물건을 타겟시장(C/D)에 중개하는 조합을 마진갭 기준으로 자동 랭킹합니다.
 B의 판매단가·C/D의 시장평균단가 모두 아래 HS Code로 한정해 산출했습니다.
+
+### 🏆 삼국무역 우선 개척 조합 3선
+
+{tri_top3_text}
+
+### 📋 HS Code별 전체 후보 목록
 
 {triangular_md}
 
