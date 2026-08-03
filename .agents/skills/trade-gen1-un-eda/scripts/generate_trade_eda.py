@@ -1122,14 +1122,15 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 
         # -- 삼국무역 (이 HS Code 한정) --
         def origin_price_hs(country, _exp_hs=exp_hs, _imp_hs=imp_hs):
+            """(평균단가, 표준편차, 신뢰도라벨) 반환. 표준편차는 매입 협상 밴드 산출에 쓰인다."""
             if exp_reporter_multi and not _exp_hs.empty and country in _exp_hs[reporter_col].values:
                 p = _exp_hs[_exp_hs[reporter_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
                 if not p.empty:
-                    return p.mean(), '직접신고(FOB)'
+                    return p.mean(), p.std(ddof=0), '직접신고(FOB)'
             p2 = _imp_hs[_imp_hs[partner_col] == country]['unit_price'].replace([np.inf, -np.inf], np.nan).dropna()
             if not p2.empty:
-                return p2.mean(), '간접추정(상대국 CIF 기준)'
-            return np.nan, None
+                return p2.mean(), p2.std(ddof=0), '간접추정(상대국 CIF 기준)'
+            return np.nan, np.nan, None
 
         def supplier_share_hs(market, supplier, _imp_hs=imp_hs):
             sub_m = _imp_hs[_imp_hs[reporter_col] == market]
@@ -1143,9 +1144,13 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
         tri_C_hs = list(top_market_hs.index)[:5]
         tri_rows_hs = []
         for b in tri_B_hs:
-            b_price, b_conf = origin_price_hs(b)
+            b_price, b_std, b_conf = origin_price_hs(b)
             if pd.isna(b_price) or b_price <= 0:
                 continue
+            b_std = b_std if pd.notna(b_std) else 0
+            buy_low = max(b_price - b_std, 0)
+            buy_band = f"${buy_low:.1f} ~ ${b_price:.1f}"
+            b_partner = f"{b} 현지 {clean_item} 수출업체/도매상 컨택 *(실사 확인 필요)*"
             for c in tri_C_hs:
                 if b == c:
                     continue
@@ -1153,6 +1158,9 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                 if c_prices.empty:
                     continue
                 c_price = c_prices.mean()
+                c_std = c_prices.std(ddof=0) or 0
+                sell_high = c_price + c_std
+                sell_band = f"${c_price:.1f} ~ ${sell_high:.1f}"
                 margin_pct = (c_price - b_price) / b_price * 100
                 b_share = supplier_share_hs(c, b)
                 if pd.isna(b_share) or b_share < 5:
@@ -1162,10 +1170,12 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                 row = {
                     'B(소싱국)': flag_hub(b),
                     'C/D(판매국)': flag_hub(c),
-                    f'B 판매단가($/kg, {b_conf})': round(b_price, 1),
-                    'C/D 시장평균단가($/kg)': round(c_price, 1),
+                    '권장 매입가($/kg)': buy_band,
+                    '단가 출처': b_conf,
+                    '권장 판매가($/kg)': sell_band,
                     '마진갭(%)': round(margin_pct, 0),
                     'B의 현재 C/D 점유율(%)': round(b_share, 1) if pd.notna(b_share) else '0(미진출)',
+                    'B측 컨택 파트너': b_partner,
                     '판정': verdict,
                 }
                 tri_rows_hs.append(row)
@@ -1182,6 +1192,9 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                     '_b_conf': b_conf,
                     '_c_price': round(c_price, 1),
                     '_b_share': round(b_share, 1) if pd.notna(b_share) else 0,
+                    '_buy_band': buy_band,
+                    '_sell_band': sell_band,
+                    '_b_partner': b_partner,
                 })
         if tri_rows_hs:
             tri_df_hs = pd.DataFrame(tri_rows_hs).sort_values(by='마진갭(%)', ascending=False).head(8)
@@ -1246,8 +1259,9 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
                 return f"### {label}\n- 선정 가능한 조합이 없습니다 (후보 데이터 부족)."
             return (
                 f"### {label}: {row['B(소싱국)']} → {row['C/D(판매국)']} — [{row['_hs_label']}]\n"
-                f"- **선정 근거**: {reason} (마진갭 {row['마진갭(%)']:.0f}%, B 판매단가 ${row['_b_price']}/kg[{row['_b_conf']}], "
-                f"C/D 시장평균단가 ${row['_c_price']}/kg, B의 현재 C/D 점유율 {row['_b_share']}%)\n"
+                f"- **선정 근거**: {reason} (마진갭 {row['마진갭(%)']:.0f}%, B의 현재 C/D 점유율 {row['_b_share']}%)\n"
+                f"- **권장 매입가**: {row['_buy_band']}/kg [{row['_b_conf']}] — {row['_b_partner']}\n"
+                f"- **권장 판매가**: {row['_sell_band']}/kg (C/D 시장평균 ${row['_c_price']}/kg 기준)\n"
                 f"- **판정**: {row['판정']}"
             )
 
