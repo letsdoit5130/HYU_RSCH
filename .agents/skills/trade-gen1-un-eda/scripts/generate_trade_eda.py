@@ -938,6 +938,24 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
     # =====================================================================
     # 1인 상사 최적 개척 시장 3선 (데이터 기반 산출, 품목 하드코딩 없음)
     # =====================================================================
+    def top_items_for_market(market, n=2):
+        """해당 타겟시장이 실제로 가장 많이 수입하는 HS Code TOP n을 반환한다.
+        ("이 시장엔 어느 품목을 팔아야 하는가"에 대한 데이터 근거)."""
+        sub = imp_df_ranked[imp_df_ranked[reporter_col] == market]
+        item_grp = sub.groupby('hs_clean')['clean_value'].sum().sort_values(ascending=False)
+        item_grp = item_grp[item_grp > 0]
+        if item_grp.empty:
+            return []
+        total = item_grp.sum()
+        return [(code, hs_desc(code), val, val / total * 100) for code, val in item_grp.head(n).items()]
+
+    def fmt_item_recommendation(market):
+        items = top_items_for_market(market)
+        if not items:
+            return "품목 추천 불가(해당 시장 HS Code 데이터 부족)"
+        parts = [f"HS {code} ({desc[:35]}, 이 시장 수입의 {share:.0f}%)" for code, desc, _val, share in items]
+        return " 우선 → ".join(parts)
+
     def build_market_strategy():
         grp = imp_df_ranked.groupby(reporter_col).agg(val=('clean_value', 'sum'), price=('unit_price', 'mean'))
         grp = grp[~grp.index.isin(EXCLUDE_TARGET)].sort_values(by='val', ascending=False)
@@ -970,14 +988,18 @@ def generate_trade_eda(csv_input, item_name, output_dir, item_slug=None, home_co
 
         return f"""### ① 시장 1: {volume_market} — [최대 거래 규모 시장]
 - **선정 근거**: 데이터 기준 누적 수입액 1위 (${grp.loc[volume_market, 'val']/1e6:,.1f}M). 가장 안정적인 기반 매출(Base Revenue) 확보가 가능한 시장으로 우선 개척을 권장합니다.
+- **추천 품목**: {fmt_item_recommendation(volume_market)}
 
 ### ② 시장 2: {premium_market} — [최고 단가/프리미엄 시장]
 - **선정 근거**: 평균 단가 기준 최상위 시장 (평균 {premium_price_txt} 수준, 데이터 산출값). 고마진 프리미엄 포지셔닝에 유리합니다.
+- **추천 품목**: {fmt_item_recommendation(premium_market)}
 
 ### ③ 시장 3: {growth_market} — [고성장 시장 (CAGR 기준)]
 - **선정 근거**: 관측 기간 중 연평균복합성장률(CAGR)이 가장 두드러진 시장입니다. 신규 진입 시 선점 효과를 기대할 수 있습니다.
+- **추천 품목**: {fmt_item_recommendation(growth_market)}
 
-> ⚠️ 위 3대 시장은 무역 통계의 정량적 산출 결과이며, 실제 진출 전 현지 바이어 리서치, 인증/규제 요건, FTA 협정세율은 별도로 확인이 필요합니다."""
+> ⚠️ 위 3대 시장은 무역 통계의 정량적 산출 결과이며, 추천 품목은 "이 시장이 실제로 가장 많이 수입하는
+> HS Code" 기준입니다. 실제 진출 전 현지 바이어 리서치, 인증/규제 요건, FTA 협정세율은 별도로 확인이 필요합니다."""
 
     market_3star_text = build_market_strategy()
 
